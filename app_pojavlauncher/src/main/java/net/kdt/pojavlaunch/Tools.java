@@ -60,7 +60,6 @@ import net.kdt.pojavlaunch.memory.MemoryHoleFinder;
 import net.kdt.pojavlaunch.memory.SelfMapsParser;
 import net.kdt.pojavlaunch.multirt.MultiRTUtils;
 import net.kdt.pojavlaunch.multirt.Runtime;
-import net.kdt.pojavlaunch.plugins.LibraryPlugin;
 import net.kdt.pojavlaunch.prefs.LauncherPreferences;
 import net.kdt.pojavlaunch.utils.DateUtils;
 import net.kdt.pojavlaunch.utils.DownloadUtils;
@@ -70,6 +69,8 @@ import net.kdt.pojavlaunch.utils.JREUtils;
 import net.kdt.pojavlaunch.utils.JSONUtils;
 import net.kdt.pojavlaunch.utils.MCOptionUtils;
 import net.kdt.pojavlaunch.utils.OldVersionsUtils;
+import net.kdt.pojavlaunch.utils.jre.JavaRunner;
+import net.kdt.pojavlaunch.utils.jre.VMLoadException;
 import net.kdt.pojavlaunch.value.DependentLibrary;
 import net.kdt.pojavlaunch.authenticator.accounts.MinecraftAccount;
 import net.kdt.pojavlaunch.value.MinecraftLibraryArtifact;
@@ -91,6 +92,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -335,20 +337,17 @@ public final class Tools {
 
         Runtime runtime = MultiRTUtils.forceReread(Tools.pickRuntime(instance, versionJavaRequirement));
 
-
         // Pre-process specific files
         disableSplash(gamedir);
-        String[] launchArgs = getMinecraftClientArgs(minecraftAccount, versionInfo, gamedir);
+        List<String> launchArgs = getMinecraftClientArgs(minecraftAccount, versionInfo, gamedir);
 
         // Select the appropriate openGL version
         OldVersionsUtils.selectOpenGlVersion(versionInfo);
 
-
-        String launchClassPath = generateLaunchClassPath(versionInfo, versionId);
+        List<String> launchClassPath = generateLaunchClassPath(versionInfo, versionId);
+        launchClassPath.add(0, getLWJGL3ClassPath());
 
         List<String> javaArgList = new ArrayList<>();
-
-        getCacioJavaArgs(javaArgList, runtime.javaVersion == 8);
 
         if (versionInfo.logging != null) {
             String configFile = Tools.DIR_DATA + "/security/" + versionInfo.logging.client.file.id.replace("client", "log4j-rce-patch");
@@ -367,18 +366,29 @@ public final class Tools {
 
         addAuthlibInjectorArgs(javaArgList, minecraftAccount);
 
-        javaArgList.addAll(Arrays.asList(getMinecraftJVMArgs(versionId, gamedir)));
-        javaArgList.add("-cp");
-        javaArgList.add(launchClassPath + ":" + getLWJGL3ClassPath());
+        javaArgList.addAll(getMinecraftJVMArgs(versionId, gamedir));
+        String rendererLibrary = JREUtils.loadGraphicsLibrary();
+        javaArgList.add("-Dorg.lwjgl.opengl.libname="+rendererLibrary);
 
-        javaArgList.add(versionInfo.mainClass);
-        javaArgList.addAll(Arrays.asList(launchArgs));
-        // ctx.appendlnToLog("full args: "+javaArgList.toString());
-        String args = instance.getLaunchArgs();
-        Tools.releaseRenderersCache();
-        JREUtils.launchJavaVM(activity, runtime, gamedir, javaArgList, args);
-        // If we returned, this means that the JVM exit dialog has been shown and we don't need to be active anymore.
-        // We never return otherwise. The process will be killed anyway, and thus we will become inactive
+        String jreName = MultiRTUtils.getRuntimeHome(runtime.name).getAbsolutePath();
+
+        JREUtils.relocateLibPath(runtime, jreName, null);
+        JREUtils.setJavaEnvironment(activity, jreName, null);
+        JREUtils.chdir(instance.getGameDirectory().getAbsolutePath());
+
+        try {
+            JavaRunner.nativeSetupExit(activity);
+            JavaRunner.startJvm(runtime, javaArgList, launchClassPath, versionInfo.mainClass, launchArgs);
+        }catch (VMLoadException e) {
+            LifecycleAwareAlertDialog.DialogCreator dialogCreator = (dialog, builder) ->
+                builder.setMessage(e.toString(activity)).setPositiveButton(android.R.string.ok, (d, w)->{});
+
+            if(LifecycleAwareAlertDialog.haltOnDialog(activity.getLifecycle(), activity, dialogCreator)) {
+                return;
+            }
+        }
+
+        Tools.fullyExit();
     }
 
     public static void buildNotificationChannel(Context context){
@@ -416,60 +426,11 @@ public final class Tools {
         javaArgList.add("-javaagent:"+Tools.DIR_DATA+"/authlib-injector/authlib-injector.jar="+injectorUrl);
     }
 
-    public static void getCacioJavaArgs(List<String> javaArgList, boolean isJava8) {
-        // Caciocavallo config AWT-enabled version
-        javaArgList.add("-Djava.awt.headless=false");
-        javaArgList.add("-Dcacio.managed.screensize=" + AWTCanvasView.AWT_CANVAS_WIDTH + "x" + AWTCanvasView.AWT_CANVAS_HEIGHT);
-        javaArgList.add("-Dcacio.font.fontmanager=sun.awt.X11FontManager");
-        javaArgList.add("-Dcacio.font.fontscaler=sun.font.FreetypeFontScaler");
-        javaArgList.add("-Dswing.defaultlaf=javax.swing.plaf.metal.MetalLookAndFeel");
-        if (isJava8) {
-            javaArgList.add("-Dawt.toolkit=net.java.openjdk.cacio.ctc.CTCToolkit");
-            javaArgList.add("-Djava.awt.graphicsenv=net.java.openjdk.cacio.ctc.CTCGraphicsEnvironment");
-        } else {
-            javaArgList.add("-Dawt.toolkit=com.github.caciocavallosilano.cacio.ctc.CTCToolkit");
-            javaArgList.add("-Djava.awt.graphicsenv=com.github.caciocavallosilano.cacio.ctc.CTCGraphicsEnvironment");
-            javaArgList.add("-Djava.system.class.loader=com.github.caciocavallosilano.cacio.ctc.CTCPreloadClassLoader");
-
-            javaArgList.add("--add-exports=java.desktop/java.awt=ALL-UNNAMED");
-            javaArgList.add("--add-exports=java.desktop/java.awt.peer=ALL-UNNAMED");
-            javaArgList.add("--add-exports=java.desktop/sun.awt.image=ALL-UNNAMED");
-            javaArgList.add("--add-exports=java.desktop/sun.java2d=ALL-UNNAMED");
-            javaArgList.add("--add-exports=java.desktop/java.awt.dnd.peer=ALL-UNNAMED");
-            javaArgList.add("--add-exports=java.desktop/sun.awt=ALL-UNNAMED");
-            javaArgList.add("--add-exports=java.desktop/sun.awt.event=ALL-UNNAMED");
-            javaArgList.add("--add-exports=java.desktop/sun.awt.datatransfer=ALL-UNNAMED");
-            javaArgList.add("--add-exports=java.desktop/sun.font=ALL-UNNAMED");
-            javaArgList.add("--add-exports=java.base/sun.security.action=ALL-UNNAMED");
-            javaArgList.add("--add-opens=java.base/java.util=ALL-UNNAMED");
-            javaArgList.add("--add-opens=java.desktop/java.awt=ALL-UNNAMED");
-            javaArgList.add("--add-opens=java.desktop/sun.font=ALL-UNNAMED");
-            javaArgList.add("--add-opens=java.desktop/sun.java2d=ALL-UNNAMED");
-            javaArgList.add("--add-opens=java.base/java.lang.reflect=ALL-UNNAMED");
-
-            // Opens the java.net package to Arc DNS injector on Java 9+
-            javaArgList.add("--add-opens=java.base/java.net=ALL-UNNAMED");
-        }
-
-        StringBuilder cacioClasspath = new StringBuilder();
-        cacioClasspath.append("-Xbootclasspath/").append(isJava8 ? "p" : "a");
-        File cacioDir = new File(DIR_GAME_HOME + "/caciocavallo" + (isJava8 ? "" : "17"));
-        File[] cacioFiles = cacioDir.listFiles();
-        if (cacioFiles != null) {
-            for (File file : cacioFiles) {
-                if (file.getName().endsWith(".jar")) {
-                    cacioClasspath.append(":").append(file.getAbsolutePath());
-                }
-            }
-        }
-        javaArgList.add(cacioClasspath.toString());
-    }
-
-    public static String[] getMinecraftJVMArgs(String versionName, File gameDir) {
+    public static List<String> getMinecraftJVMArgs(String versionName, File gameDir) {
         JMinecraftVersionList.Version versionInfo = Tools.getVersionInfo(versionName, true);
         // Parse Forge 1.17+ additional JVM Arguments
         if (versionInfo.inheritsFrom == null || versionInfo.arguments == null || versionInfo.arguments.jvm == null) {
-            return new String[0];
+            return Collections.emptyList();
         }
 
         Map<String, String> varArgMap = new ArrayMap<>();
@@ -486,10 +447,10 @@ public final class Tools {
                 } //TODO: implement (?maybe?)
             }
         }
-        return JSONUtils.insertJSONValueList(minecraftArgs.toArray(new String[0]), varArgMap);
+        return JSONUtils.insertJSONValueList(minecraftArgs, varArgMap);
     }
 
-    public static String[] getMinecraftClientArgs(MinecraftAccount profile, JMinecraftVersionList.Version versionInfo, File gameDir) {
+    public static List<String> getMinecraftClientArgs(MinecraftAccount profile, JMinecraftVersionList.Version versionInfo, File gameDir) {
         String username = profile.username;
         String versionName = versionInfo.id;
         if (versionInfo.inheritsFrom != null) {
@@ -525,7 +486,7 @@ public final class Tools {
         varArgMap.put("version_name", versionName);
         varArgMap.put("version_type", versionInfo.type);
 
-        List<String> minecraftArgs = new ArrayList<>();
+        List<String> minecraftArgs = new ArrayList<>();;
         if (versionInfo.arguments != null) {
             // Support Minecraft 1.13+
             for (Object arg : versionInfo.arguments.game) {
@@ -534,14 +495,10 @@ public final class Tools {
                 } //TODO: implement else clause
             }
         }
-
-        return JSONUtils.insertJSONValueList(
-                splitAndFilterEmpty(
-                        versionInfo.minecraftArguments == null ?
-                                fromStringArray(minecraftArgs.toArray(new String[0])):
-                                versionInfo.minecraftArguments
-                ), varArgMap
-        );
+        if(versionInfo.minecraftArguments != null){
+            minecraftArgs.addAll(splitAndFilterEmpty(versionInfo.minecraftArguments));
+        }
+        return JSONUtils.insertJSONValueList(minecraftArgs, varArgMap);
     }
 
     public static String fromStringArray(String[] strArr) {
@@ -550,19 +507,17 @@ public final class Tools {
             if (i > 0) builder.append(" ");
             builder.append(strArr[i]);
         }
-
         return builder.toString();
     }
 
-    private static String[] splitAndFilterEmpty(String argStr) {
+    private static List<String> splitAndFilterEmpty(String argStr) {
         List<String> strList = new ArrayList<>();
         for (String arg : argStr.split(" ")) {
             if (!arg.isEmpty()) {
                 strList.add(arg);
             }
         }
-        //strList.add("--fullscreen");
-        return strList.toArray(new String[0]);
+        return strList;
     }
 
     public static String artifactToPath(DependentLibrary library) {
@@ -594,27 +549,21 @@ public final class Tools {
         return libStr.toString();
     }
 
-    private final static boolean isClientFirst = false;
-    public static String generateLaunchClassPath(JMinecraftVersionList.Version info, String actualname) {
-        StringBuilder finalClasspath = new StringBuilder(); //versnDir + "/" + version + "/" + version + ".jar:";
-
-        String[] classpath = generateLibClasspath(info);
-
-        if (isClientFirst) {
-            finalClasspath.append(getClientClasspath(actualname));
-        }
-        for (String jarFile : classpath) {
-            if (!FileUtils.exists(jarFile)) {
-                Log.d(APP_NAME, "Ignored non-exists file: " + jarFile);
+    public static List<String> generateLaunchClassPath(JMinecraftVersionList.Version info, String actualname) {
+        String[] libClasspath = generateLibClasspath(info);
+        ArrayList<String> classpath = new ArrayList<>(libClasspath.length + 1);
+        classpath.add(getClientClasspath(actualname));
+        for(String s : libClasspath) {
+            if(!FileUtils.exists(s)) {
+                Log.d(APP_NAME, "Ignored non-exists file: " + s);
                 continue;
             }
-            finalClasspath.append((isClientFirst ? ":" : "")).append(jarFile).append(!isClientFirst ? ":" : "");
+            classpath.add(s);
         }
-        if (!isClientFirst) {
-            finalClasspath.append(getClientClasspath(actualname));
-        }
+        classpath.addAll(Arrays.asList(libClasspath));
+        classpath.trimToSize();
 
-        return finalClasspath.toString();
+        return classpath;
     }
 
     public static DisplayMetrics getDisplayMetrics(Activity activity) {

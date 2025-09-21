@@ -4,14 +4,12 @@ import static net.kdt.pojavlaunch.Architecture.ARCH_X86;
 import static net.kdt.pojavlaunch.Architecture.is64BitsDevice;
 import static net.kdt.pojavlaunch.Tools.LOCAL_RENDERER;
 import static net.kdt.pojavlaunch.Tools.NATIVE_LIB_DIR;
-import static net.kdt.pojavlaunch.Tools.shareLog;
 import static net.kdt.pojavlaunch.prefs.LauncherPreferences.PREF_DUMP_SHADERS;
 import static net.kdt.pojavlaunch.prefs.LauncherPreferences.PREF_VSYNC_IN_ZINK;
 import static net.kdt.pojavlaunch.prefs.LauncherPreferences.PREF_ZINK_PREFER_SYSTEM_DRIVER;
 
 import android.app.*;
 import android.content.*;
-import android.os.Build;
 import android.system.*;
 import android.util.*;
 import android.widget.Toast;
@@ -24,11 +22,11 @@ import java.util.*;
 import net.kdt.pojavlaunch.*;
 import net.kdt.pojavlaunch.extra.ExtraConstants;
 import net.kdt.pojavlaunch.extra.ExtraCore;
-import net.kdt.pojavlaunch.lifecycle.LifecycleAwareAlertDialog;
 import net.kdt.pojavlaunch.multirt.MultiRTUtils;
 import net.kdt.pojavlaunch.multirt.Runtime;
 import net.kdt.pojavlaunch.plugins.LibraryPlugin;
 import net.kdt.pojavlaunch.prefs.*;
+import net.kdt.pojavlaunch.utils.jre.JavaRunner;
 
 import git.artdeell.mojo.R;
 
@@ -58,44 +56,7 @@ public class JREUtils {
         return libName;
     }
 
-    public static ArrayList<File> locateLibs(File path) {
-        ArrayList<File> returnValue = new ArrayList<>();
-        File[] list = path.listFiles();
-        if(list != null) {
-            for(File f : list) {
-                if(f.isFile() && f.getName().endsWith(".so")) {
-                    returnValue.add(f);
-                }else if(f.isDirectory()) {
-                    returnValue.addAll(locateLibs(f));
-                }
-            }
-        }
-        return returnValue;
-    }
-
-    public static void initJavaRuntime(String jreHome) {
-        dlopen(findInLdLibPath("libjli.so"));
-        if(!dlopen("libjvm.so")){
-            Log.w("DynamicLoader","Failed to load with no path, trying with full path");
-            dlopen(jvmLibraryPath+"/libjvm.so");
-        }
-        dlopen(findInLdLibPath("libverify.so"));
-        dlopen(findInLdLibPath("libjava.so"));
-        // dlopen(findInLdLibPath("libjsig.so"));
-        dlopen(findInLdLibPath("libnet.so"));
-        dlopen(findInLdLibPath("libnio.so"));
-        dlopen(findInLdLibPath("libawt.so"));
-        dlopen(findInLdLibPath("libawt_headless.so"));
-        dlopen(findInLdLibPath("libfreetype.so"));
-        dlopen(findInLdLibPath("libfontmanager.so"));
-        for(File f : locateLibs(new File(jreHome, Tools.DIRNAME_HOME_JRE))) {
-            dlopen(f.getAbsolutePath());
-        }
-        dlopen(NATIVE_LIB_DIR + "/libopenal.so");
-    }
-
     public static void redirectAndPrintJRELog() {
-
         Log.v("jrelog","Log starts here");
         new Thread(new Runnable(){
             int failTime = 0;
@@ -210,9 +171,8 @@ public class JREUtils {
         // The OPEN GL version is changed according
         envMap.put("LIBGL_ES", (String) ExtraCore.getValue(ExtraConstants.OPEN_GL_VERSION));
 
-	    // HACK: GL/GLSL version override for Mesa-based renderers (i.e. Zink)
+	    // HACK: LSL version override for Mesa-based renderers (i.e. Zink)
 	    // Required to run the game properly on some mobile Vulkan drivers (Minecraft fails to compile shaders without)
-	    envMap.put("MESA_GL_VERSION_OVERRIDE", "4.6");
         envMap.put("MESA_GLSL_VERSION_OVERRIDE", "460");
 
         envMap.put("FORCE_VSYNC", String.valueOf(LauncherPreferences.PREF_FORCE_VSYNC));
@@ -221,11 +181,8 @@ public class JREUtils {
         envMap.put("force_glsl_extensions_warn", "true");
         envMap.put("allow_higher_compat_version", "true");
         envMap.put("allow_glsl_extension_directive_midshader", "true");
-        envMap.put("MESA_LOADER_DRIVER_OVERRIDE", "zink");
-        envMap.put("VTEST_SOCKET_NAME", new File(Tools.DIR_CACHE, ".virgl_test").getAbsolutePath());
 
         envMap.put("LD_LIBRARY_PATH", LD_LIBRARY_PATH);
-        envMap.put("PATH", jreHome + "/bin:" + Os.getenv("PATH"));
         if(ffmpegPlugin != null)
             envMap.put("POJAV_FFMPEG_PATH", ffmpegPlugin.resolveAbsolutePath("libffmpeg.so"));
         setupAngleEnv(activity, envMap);
@@ -252,21 +209,7 @@ public class JREUtils {
         }
 
         GLInfoUtils.GLInfo info = GLInfoUtils.getGlInfo();
-        if(!envMap.containsKey("LIBGL_ES") && LOCAL_RENDERER != null) {
-            int glesMajor = info.glesMajorVersion;
-            Log.i("glesDetect","GLES version detected: "+glesMajor);
-
-            if (glesMajor < 3) {
-                //fallback to 2 since it's the minimum for the entire app
-                envMap.put("LIBGL_ES","2");
-            } else if (LOCAL_RENDERER.startsWith("opengles")) {
-                envMap.put("LIBGL_ES", LOCAL_RENDERER.replace("opengles", "").replace("_5", ""));
-            } else {
-                // TODO if can: other backends such as Vulkan.
-                // Sure, they should provide GLES 3 support.
-                envMap.put("LIBGL_ES", "3");
-            }
-        }
+        envMap.put("LIBGL_ES", "2");
 
         if(info.isAdreno() && !PREF_ZINK_PREFER_SYSTEM_DRIVER) {
             envMap.put("POJAV_LOAD_TURNIP", "1");
@@ -299,120 +242,17 @@ public class JREUtils {
 
         setJavaEnvironment(activity, runtimeHome, ffmpeg);
 
-        final String graphicsLib = loadGraphicsLibrary();
-        List<String> userArgs = getJavaArgs(activity, runtimeHome, userArgsString);
-
-        //Remove arguments that can interfere with the good working of the launcher
-        purgeArg(userArgs,"-Xms");
-        purgeArg(userArgs,"-Xmx");
-        purgeArg(userArgs,"-d32");
-        purgeArg(userArgs,"-d64");
-        purgeArg(userArgs, "-Xint");
-        purgeArg(userArgs, "-XX:+UseTransparentHugePages");
-        purgeArg(userArgs, "-XX:+UseLargePagesInMetaspace");
-        purgeArg(userArgs, "-XX:+UseLargePages");
-        purgeArg(userArgs, "-Dorg.lwjgl.opengl.libname");
-        // Don't let the user specify a custom Freetype library (as the user is unlikely to specify a version compiled for Android)
-        purgeArg(userArgs, "-Dorg.lwjgl.freetype.libname");
-        // Overridden by us to specify the exact number of cores that the android system has
-        purgeArg(userArgs, "-XX:ActiveProcessorCount");
-
-        //Add automatically generated args
-        userArgs.add("-Xms" + LauncherPreferences.PREF_RAM_ALLOCATION + "M");
-        userArgs.add("-Xmx" + LauncherPreferences.PREF_RAM_ALLOCATION + "M");
-        if(LOCAL_RENDERER != null) userArgs.add("-Dorg.lwjgl.opengl.libname=" + graphicsLib);
-
         // Force LWJGL to use the Freetype library intended for it, instead of using the one
         // that we ship with Java (since it may be older than what's needed)
-        userArgs.add("-Dorg.lwjgl.freetype.libname="+ NATIVE_LIB_DIR+"/libfreetype.so");
+        //userArgs.add("-Dorg.lwjgl.freetype.libname="+ NATIVE_LIB_DIR+"/libfreetype.so");
 
-        // Some phones are not using the right number of cores, fix that
-        userArgs.add("-XX:ActiveProcessorCount=" + java.lang.Runtime.getRuntime().availableProcessors());
-        // Disable Sodium's LWJGL check to prevent a crash
-        userArgs.add("-Dsodium.checks.issue2561=false");
-        
-        userArgs.addAll(JVMArgs);
         activity.runOnUiThread(() -> Toast.makeText(activity, activity.getString(R.string.autoram_info_msg,LauncherPreferences.PREF_RAM_ALLOCATION), Toast.LENGTH_SHORT).show());
         System.out.println(JVMArgs);
 
-        initJavaRuntime(runtimeHome);
-        JREUtils.setupExitMethod(activity.getApplication());
-        JREUtils.initializeHooks();
+        //initJavaRuntime(runtimeHome);
+
         chdir(gameDirectory == null ? Tools.DIR_GAME_NEW : gameDirectory.getAbsolutePath());
-        userArgs.add(0,"java"); //argv[0] is the program name according to C standard.
-
-        final int exitCode = VMLauncher.launchJVM(userArgs.toArray(new String[0]));
-        Logger.appendToLog("Java Exit code: " + exitCode);
-        if (exitCode != 0) {
-            LifecycleAwareAlertDialog.DialogCreator dialogCreator = (dialog, builder)->
-                    builder.setMessage(activity.getString(R.string.mcn_exit_title, exitCode))
-                    .setPositiveButton(R.string.main_share_logs, (dialogInterface, which)-> shareLog(activity));
-
-            LifecycleAwareAlertDialog.haltOnDialog(activity.getLifecycle(), activity, dialogCreator);
-        }
         Tools.fullyExit();
-    }
-
-    /**
-     *  Gives an argument list filled with both the user args
-     *  and the auto-generated ones (eg. the window resolution).
-     * @param ctx The application context
-     * @return A list filled with args.
-     */
-    public static List<String> getJavaArgs(Context ctx, String runtimeHome, String userArgumentsString) {
-        List<String> userArguments = parseJavaArguments(userArgumentsString);
-        String resolvFile;
-        resolvFile = new File(Tools.DIR_DATA,"resolv.conf").getAbsolutePath();
-
-        ArrayList<String> overridableArguments = new ArrayList<>(Arrays.asList(
-                "-Djava.home=" + runtimeHome,
-                "-Djava.io.tmpdir=" + Tools.DIR_CACHE.getAbsolutePath(),
-                "-Djna.boot.library.path=" + NATIVE_LIB_DIR,
-                "-Duser.home=" + Tools.DIR_GAME_HOME,
-                "-Duser.language=" + System.getProperty("user.language"),
-                "-Dos.name=Linux",
-                "-Dos.version=Android-" + Build.VERSION.RELEASE,
-                "-Dpojav.path.minecraft=" + Tools.DIR_GAME_NEW,
-                "-Dpojav.path.private.account=" + Tools.DIR_ACCOUNT_NEW,
-                "-Duser.timezone=" + TimeZone.getDefault().getID(),
-
-                "-Dorg.lwjgl.vulkan.libname=libvulkan.so",
-                //LWJGL 3 DEBUG FLAGS
-                //"-Dorg.lwjgl.util.Debug=true",
-                //"-Dorg.lwjgl.util.DebugFunctions=true",
-                //"-Dorg.lwjgl.util.DebugLoader=true",
-                // GLFW Stub width height
-                "-Dglfwstub.initEgl=false",
-                "-Dext.net.resolvPath=" +resolvFile,
-                "-Dlog4j2.formatMsgNoLookups=true", //Log4j RCE mitigation
-
-                "-Dnet.minecraft.clientmodname=" + Tools.APP_NAME,
-                "-Dfml.earlyprogresswindow=false", //Forge 1.14+ workaround
-                "-Dloader.disable_forked_guis=true",
-                "-Djdk.lang.Process.launchMechanism=FORK" // Default is POSIX_SPAWN which requires starting jspawnhelper, which doesn't work on Android
-        ));
-        if(LauncherPreferences.PREF_ARC_CAPES) {
-            overridableArguments.add("-javaagent:"+new File(Tools.DIR_DATA,"arc_dns_injector/arc_dns_injector.jar").getAbsolutePath()+"=23.95.137.176");
-        }
-        List<String> additionalArguments = new ArrayList<>();
-        for(String arg : overridableArguments) {
-            String strippedArg = arg.substring(0,arg.indexOf('='));
-            boolean add = true;
-            for(String uarg : userArguments) {
-                if(uarg.startsWith(strippedArg)) {
-                    add = false;
-                    break;
-                }
-            }
-            if(add)
-                additionalArguments.add(arg);
-            else
-                Log.i("ArgProcessor","Arg skipped: "+arg);
-        }
-
-        //Add all the arguments
-        userArguments.addAll(additionalArguments);
-        return userArguments;
     }
 
     /**
@@ -495,39 +335,8 @@ public class JREUtils {
             Log.e("RENDER_LIBRARY","Failed to load renderer " + renderLibrary + ". Falling back to GL4ES 1.1.4");
             LOCAL_RENDERER = "opengles2";
             renderLibrary = "libgl4es_114.so";
-            dlopen(NATIVE_LIB_DIR + "/libgl4es_114.so");
         }
         return renderLibrary;
-    }
-
-    /**
-     * Remove the argument from the list, if it exists
-     * If the argument exists multiple times, they will all be removed.
-     * @param argList The argument list to purge
-     * @param argStart The argument to purge from the list.
-     */
-    private static void purgeArg(List<String> argList, String argStart) {
-        Iterator<String> args = argList.iterator();
-        while(args.hasNext()) {
-            String arg = args.next();
-            if(arg.startsWith(argStart)) args.remove();
-        }
-    }
-    private static final int EGL_OPENGL_ES_BIT = 0x0001;
-    private static final int EGL_OPENGL_ES2_BIT = 0x0004;
-    private static final int EGL_OPENGL_ES3_BIT_KHR = 0x0040;
-    @SuppressWarnings("SameParameterValue")
-    private static boolean hasExtension(String extensions, String name) {
-        int start = extensions.indexOf(name);
-        while (start >= 0) {
-            // check that we didn't find a prefix of a longer extension name
-            int end = start + name.length();
-            if (end == extensions.length() || extensions.charAt(end) == ' ') {
-                return true;
-            }
-            start = extensions.indexOf(name, end);
-        }
-        return false;
     }
 
     public static int getDetectedVersion() {
@@ -539,7 +348,6 @@ public class JREUtils {
     public static native void setupBridgeWindow(Object surface);
     public static native void releaseBridgeWindow();
     public static native void initializeHooks();
-    public static native void setupExitMethod(Context context);
     // Obtain AWT screen pixels to render on Android SurfaceView
     public static native int[] renderAWTScreenFrame(/* Object canvas, int width, int height */);
     static {

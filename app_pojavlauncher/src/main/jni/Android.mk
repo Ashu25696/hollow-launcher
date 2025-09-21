@@ -32,7 +32,9 @@ LOCAL_SRC_FILES := \
     jvm_hooks/java_exec_hooks.c \
     jvm_hooks/lwjgl_dlopen_hook.c \
     input_bridge_v3.c \
-    jre_launcher.c \
+    jre_launcher/jre_launcher_new.c \
+    jre_launcher/native_library_hook.c \
+    jre_launcher/elf_hinter.c \
     utils.c \
     stdio_is.c \
     driver_helper/nsbypass.c \

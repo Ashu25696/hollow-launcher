@@ -26,6 +26,7 @@ import net.kdt.pojavlaunch.multirt.Runtime;
 import net.kdt.pojavlaunch.prefs.LauncherPreferences;
 import net.kdt.pojavlaunch.utils.JREUtils;
 import net.kdt.pojavlaunch.utils.MathUtils;
+import net.kdt.pojavlaunch.utils.jre.JavaRunner;
 
 import org.apache.commons.io.IOUtils;
 
@@ -362,7 +363,7 @@ public class JavaGUILauncherActivity extends BaseActivity implements View.OnTouc
             List<String> javaArgList = new ArrayList<>();
 
             // Enable Caciocavallo
-            Tools.getCacioJavaArgs(javaArgList,runtime.javaVersion == 8);
+            JavaRunner.getCacioJavaArgs(javaArgList,runtime.javaVersion == 8);
             if(javaArgs != null) {
                 javaArgList.addAll(javaArgs);
             }

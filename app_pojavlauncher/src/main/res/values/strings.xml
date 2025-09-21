@@ -457,4 +457,19 @@
     <string name="preference_verify_game_files_description">Verify downloaded game files against the checksum and size set in the metadata. Metadata JSON files are verified regardless of this setting.</string>
     <string name="preference_go_vroom_title">Fast game startup</string>
     <string name="preference_go_vroom_description">Don\'t verify file checksums upon sequential restarts. Makes the game start-up very fast.</string>
+    <string name="vml_fail_load_runtime">Failed to load the Java virtual machine: %s</string>
+    <string name="vml_fail_create_runtime">Failed to create the Java virtual machine: %s</string>
+    <string name="vml_fail_find_hooks_native">Failed to find native hooks.</string>
+    <string name="vml_fail_find_hooks">Failed to find hook targets. Check latestlog.txt for details</string>
+    <string name="vml_fail_insert_hooks">Failed to install hooks: %s</string>
+    <string name="vml_fail_load_classpath">Failed to load the classpath. Check latestlog.txt for details</string>
+    <string name="vml_fail_run_main">Failed to start the main class. Check latestlog.txt for details</string>
+    <string name="vml_huh">\???</string>
+    <string name="vml_err_ok">Success</string>
+    <string name="vml_err_unknown">Unknown error</string>
+    <string name="vml_err_detached">Thread is detached from the Java VM</string>
+    <string name="vml_err_version">Incompatible JNI version</string>
+    <string name="vml_err_nomem">Out of RAM</string>
+    <string name="vml_err_exists">The VM is already loaded</string>
+    <string name="vml_err_inval">Bad arguments</string>
 </resources>

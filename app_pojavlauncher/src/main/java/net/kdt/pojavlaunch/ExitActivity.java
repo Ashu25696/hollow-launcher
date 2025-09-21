@@ -6,6 +6,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 
 import androidx.annotation.Keep;
 import androidx.annotation.Nullable;
@@ -39,12 +40,31 @@ public class ExitActivity extends AppCompatActivity {
     }
 
     public static void showExitMessage(Context ctx, int code, boolean isSignal) {
-        Intent i = new Intent(ctx,ExitActivity.class);
-        i.putExtra("code",code);
-        i.putExtra("isSignal", isSignal);
-        i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        ctx.startActivity(i);
+        if(!isSignal && code == 0) {
+            System.exit(0);
+            return;
+        }
+
+        Object lock = new Object();
+        Tools.runOnUiThread(()->{
+            Intent i = new Intent(ctx,ExitActivity.class);
+            i.putExtra("code",code);
+            i.putExtra("isSignal", isSignal);
+            i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            ctx.startActivity(i);
+            synchronized (lock) {
+                lock.notify();
+            }
+        });
+        synchronized (lock) {
+            try {
+                lock.wait();
+            } catch (InterruptedException e) {
+                Log.e("ExitActivity", "Waiting on lock failed: "+e);
+            }
+        }
+        System.exit(0);
     }
 
 }
