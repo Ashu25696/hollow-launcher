@@ -64,16 +64,15 @@ import net.kdt.pojavlaunch.tasks.AsyncAssetManager;
 import net.kdt.pojavlaunch.utils.JREUtils;
 import net.kdt.pojavlaunch.utils.MCOptionUtils;
 import net.kdt.pojavlaunch.authenticator.accounts.MinecraftAccount;
-import net.kdt.pojavlaunch.utils.jre.JavaRunner;
+import net.kdt.pojavlaunch.utils.RendererCompatUtil;
+import net.kdt.pojavlaunch.utils.jre.GameRunner;
 
 import org.lwjgl.glfw.CallbackBridge;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 
 import git.artdeell.mojo.R;
-import kotlin.collections.ArrayDeque;
 
 public class MainActivity extends BaseActivity implements ControlButtonMenuListener, EditorExitable, ServiceConnection {
     public static volatile ClipboardManager GLOBAL_CLIPBOARD;
@@ -176,18 +175,10 @@ public class MainActivity extends BaseActivity implements ControlButtonMenuListe
             GLOBAL_CLIPBOARD = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
             touchCharInput.setCharacterSender(new LwjglCharSender());
 
-            Tools.LOCAL_RENDERER = instance.getLaunchRenderer();
-
             String version = getIntent().getStringExtra(INTENT_MINECRAFT_VERSION);
             version = version == null ? instance.versionId : version;
 
             setTitle("Minecraft " + version);
-
-            // Minecraft 1.13+
-            JMinecraftVersionList.Version mVersionInfo = Tools.getVersionInfo(version);
-            isInputStackCall = mVersionInfo.arguments != null;
-            CallbackBridge.nativeSetUseInputStackQueue(isInputStackCall);
-
 
             // Menu
             gameActionArrayAdapter = new ArrayAdapter<>(this,
@@ -214,7 +205,7 @@ public class MainActivity extends BaseActivity implements ControlButtonMenuListe
                         touchpad.post(() -> touchpad.switchState());
                     }
 
-                    runCraft(finalVersion, mVersionInfo);
+                    runCraft(finalVersion);
                 }catch (Throwable e){
                     Tools.showErrorRemote(e);
                 }
@@ -346,22 +337,18 @@ public class MainActivity extends BaseActivity implements ControlButtonMenuListe
         }
     }
 
-    private void runCraft(String versionId, JMinecraftVersionList.Version version) throws Throwable {
-        if(Tools.LOCAL_RENDERER == null) {
-            Tools.LOCAL_RENDERER = LauncherPreferences.PREF_RENDERER;
-        }
-        if(!Tools.checkRendererCompatible(this, Tools.LOCAL_RENDERER)) {
-            Tools.RenderersList renderersList = Tools.getCompatibleRenderers(this);
+    private void runCraft(String versionId) throws Throwable {
+        String renderer = LauncherPreferences.PREF_RENDERER;
+        if(!RendererCompatUtil.checkRendererCompatible(this, renderer)) {
+            RendererCompatUtil.RenderersList renderersList = RendererCompatUtil.getCompatibleRenderers(this);
             String firstCompatibleRenderer = renderersList.rendererIds.get(0);
-            Log.w("runCraft","Incompatible renderer "+Tools.LOCAL_RENDERER+ " will be replaced with "+firstCompatibleRenderer);
-            Tools.LOCAL_RENDERER = firstCompatibleRenderer;
+            Log.w("runCraft","Incompatible renderer "+renderer+ " will be replaced with "+firstCompatibleRenderer);
+            renderer = firstCompatibleRenderer;
         }
         Logger.appendToLog("--------- Starting game with Launcher Debug!");
         Tools.printLauncherInfo(versionId, instance.getLaunchArgs());
         JREUtils.redirectAndPrintJRELog();
-        int requiredJavaVersion = 8;
-        if(version.javaVersion != null) requiredJavaVersion = version.javaVersion.majorVersion;
-        Tools.launchMinecraft(this, minecraftAccount, instance, versionId, requiredJavaVersion);
+        GameRunner.launchMinecraft(this, minecraftAccount, instance, versionId, renderer);
         //Note that we actually stall in the above function, even if the game crashes. But let's be safe.
         Tools.runOnUiThread(()-> mServiceBinder.isActive = false);
     }

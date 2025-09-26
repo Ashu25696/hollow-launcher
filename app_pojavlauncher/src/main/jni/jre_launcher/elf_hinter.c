@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <malloc.h>
 #include <string.h>
+#include <stdlib.h>
 #include "elf_hinter.h"
 
 #define TAG __FILE_NAME__
@@ -55,7 +56,6 @@ static bool hinter_for_each_dependency(const char* lib_path, void** popstack, in
             const char* needed = strtab + dynEntry->d_un.d_val;
             if(!inner_hinter_process(popstack, stack_top, needed)) goto exit;
         }
-        
         result = true;
     }
     exit:
@@ -64,13 +64,40 @@ static bool hinter_for_each_dependency(const char* lib_path, void** popstack, in
     return result;
 }
 
+static bool hinter_lookup_path(char fullpath[PATH_MAX], const char* path, const char* name) {
+    snprintf(fullpath, PATH_MAX, "%s/%s", path, name);
+    return access(fullpath, F_OK) == 0;
+}
+
 static bool hinter_lookup_lib(const char* lib_name, char lib_path[PATH_MAX]) {
     if(lib_name[0] == '/') {
         strncpy(lib_path, lib_name, PATH_MAX);
-    }else {
-        snprintf(lib_path, PATH_MAX, "%s%s", "/data/data/git.artdeell.mojo.debug/runtimes/Internal/lib/aarch64/", lib_name);
+        return true;
     }
-    return access(lib_path, F_OK) == 0;
+    bool eof = false;
+    char dir_path[PATH_MAX];
+    const char* ld_lib_path = getenv("LD_LIBRARY_PATH");
+    const char* path_fragment = ld_lib_path;
+    const char* path_next;
+    do {
+        path_next = strchr(path_fragment, ':');
+        if(path_next == NULL) {
+            eof = true;
+            path_next = strchr(path_fragment, 0);
+        }
+        size_t copy_len = path_next - path_fragment;
+        if(copy_len != 0) {
+            memcpy(dir_path, path_fragment, copy_len);
+            dir_path[copy_len] = 0;
+            if(hinter_lookup_path(lib_path, dir_path, lib_name)) return true;
+        }
+        if(!eof) {
+            path_fragment = path_next + 1;
+        }else {
+            break;
+        }
+    } while (true);
+    return false;
 }
 
 static bool inner_hinter_process(void** popstack, int* stack_top, const char* lib_name) {

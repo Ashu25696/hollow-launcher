@@ -9,10 +9,11 @@ import androidx.preference.SwitchPreference;
 import androidx.preference.SwitchPreferenceCompat;
 
 import git.artdeell.mojo.R;
-import net.kdt.pojavlaunch.Tools;
+
 import net.kdt.pojavlaunch.plugins.LibraryPlugin;
 import net.kdt.pojavlaunch.prefs.CustomSeekBarPreference;
 import net.kdt.pojavlaunch.prefs.LauncherPreferences;
+import net.kdt.pojavlaunch.utils.RendererCompatUtil;
 
 /**
  * Fragment for any settings video related
@@ -51,7 +52,7 @@ public class LauncherPreferenceVideoFragment extends LauncherPreferenceFragment 
 
         ListPreference rendererListPreference = requirePreference("renderer",
                 ListPreference.class);
-        Tools.RenderersList renderersList = Tools.getCompatibleRenderers(getContext());
+        RendererCompatUtil.RenderersList renderersList = RendererCompatUtil.getCompatibleRenderers(getContext());
         rendererListPreference.setEntries(renderersList.rendererDisplayNames);
         rendererListPreference.setEntryValues(renderersList.rendererIds.toArray(new String[0]));
 

@@ -166,10 +166,8 @@ public class JavaGUILauncherActivity extends BaseActivity implements View.OnTouc
             if (javaArgs != null) {
                 startModInstaller(null, javaArgs);
             }else if(resourceUri != null) {
-                ProgressDialog barrierDialog = Tools.getWaitingDialog(this, R.string.multirt_progress_caching);
                 PojavApplication.sExecutorService.execute(()->{
                     startModInstallerWithUri(resourceUri);
-                    runOnUiThread(barrierDialog::dismiss);
                 });
             }
         } catch (Throwable th) {
@@ -362,8 +360,6 @@ public class JavaGUILauncherActivity extends BaseActivity implements View.OnTouc
         try {
             List<String> javaArgList = new ArrayList<>();
 
-            // Enable Caciocavallo
-            JavaRunner.getCacioJavaArgs(javaArgList,runtime.javaVersion == 8);
             if(javaArgs != null) {
                 javaArgList.addAll(javaArgs);
             }

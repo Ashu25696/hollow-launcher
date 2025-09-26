@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include "utils.h"
 #include "load_stages.h"
+#include "elf_hinter.h"
 
 #define TAG __FILE_NAME__
 #include "log.h"
@@ -196,8 +197,11 @@ Java_net_kdt_pojavlaunch_utils_jre_JavaRunner_nativeLoadJVM(JNIEnv *env, jclass 
     java_vm_t java_vm;
     if(!initializeJavaVM(&java_vm, env, vmpath, java_args)) return JNI_FALSE;
     JNIEnv *vm_env = java_vm.vm_env;
+    if(android_get_device_api_level() >= 24) {
+        // Android 7+ requires the hinter to to provide proper library load paths.
+        if(!installClassLoaderHooks(env, vm_env)) return JNI_FALSE;
+    }
 
-    if(!installClassLoaderHooks(env, vm_env)) return JNI_FALSE;
 
     jobject urlClassLoader = initalizeClassLoader(env, vm_env, classpath);
     if(urlClassLoader == NULL) {

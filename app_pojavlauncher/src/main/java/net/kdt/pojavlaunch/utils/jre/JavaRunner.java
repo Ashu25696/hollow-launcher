@@ -4,6 +4,8 @@ import static net.kdt.pojavlaunch.Tools.NATIVE_LIB_DIR;
 
 import android.content.Context;
 import android.os.Build;
+import android.system.ErrnoException;
+import android.system.Os;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -18,13 +20,14 @@ import net.kdt.pojavlaunch.utils.JREUtils;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Objects;
 import java.util.TimeZone;
 
 public class JavaRunner {
-    public static void getCacioJavaArgs(List<String> javaArgList, boolean isJava8) {
+
+    private static void getCacioJavaArgs(List<String> javaArgList, boolean isJava8) {
         // Caciocavallo config AWT-enabled version
         javaArgList.add("-Djava.awt.headless=false");
         javaArgList.add("-Dcacio.managed.screensize=" + AWTCanvasView.AWT_CANVAS_WIDTH + "x" + AWTCanvasView.AWT_CANVAS_HEIGHT);
@@ -81,7 +84,7 @@ public class JavaRunner {
      *  and the auto-generated ones (eg. the window resolution).
      * @return A list filled with args.
      */
-    public static List<String> getJavaArgs(String runtimeHome, List<String> userArguments) {
+    private static List<String> getJavaArgs(String runtimeHome, List<String> userArguments) {
         String resolvFile;
         resolvFile = new File(Tools.DIR_DATA,"resolv.conf").getAbsolutePath();
 
@@ -140,13 +143,49 @@ public class JavaRunner {
         else return new File(runtimeHomeDir, "lib/"+flavor+"/libjvm.so");
     }
 
-    private static String findVmPath(File runtimeHomeDir, String runtimeArch) {
+    private static File findVmPath(File runtimeHomeDir, String runtimeArch) {
         File finalPath;
-        if((finalPath = getVmPath(runtimeHomeDir, null, "server")).exists()) return finalPath.getAbsolutePath();
-        if((finalPath = getVmPath(runtimeHomeDir, null, "client")).exists()) return finalPath.getAbsolutePath();
-        if((finalPath = getVmPath(runtimeHomeDir, runtimeArch, "server")).exists()) return finalPath.getAbsolutePath();
-        if((finalPath = getVmPath(runtimeHomeDir, runtimeArch, "client")).exists()) return finalPath.getAbsolutePath();
+        if((finalPath = getVmPath(runtimeHomeDir, null, "server")).exists()) return finalPath;
+        if((finalPath = getVmPath(runtimeHomeDir, null, "client")).exists()) return finalPath;
+        if((finalPath = getVmPath(runtimeHomeDir, runtimeArch, "server")).exists()) return finalPath;
+        if((finalPath = getVmPath(runtimeHomeDir, runtimeArch, "client")).exists()) return finalPath;
         return null;
+    }
+
+    private static void relocateLdLibPath(File vmPath, List<String> extraDirs) {
+        // Java directory layout:
+        // .../server/libjvm.so
+        // .../libjava.so
+        // and so on. Hotspot itself relies on this we also rely on this.
+        File vmDir = Objects.requireNonNull(vmPath.getParentFile());
+        File libsDir = Objects.requireNonNull(vmDir.getParentFile());
+        StringBuilder libPathBuilder =  new StringBuilder()
+                .append(NATIVE_LIB_DIR).append(':')
+                .append(vmDir.getAbsolutePath()).append(':')
+                .append(libsDir.getAbsolutePath());
+
+        if(extraDirs != null) for(String path : extraDirs) {
+            libPathBuilder.append(':').append(path);
+        }
+
+        String ldLibPath = libPathBuilder.toString();
+        try {
+            Os.setenv("LD_LIBRARY_PATH", ldLibPath, true);
+        }catch (ErrnoException e) {
+            throw new RuntimeException(e);
+        }
+        JREUtils.setLdLibraryPath(ldLibPath);
+    }
+
+    private static void setImmutableEnvVars(File jreHome) {
+        try {
+            Os.setenv("POJAV_NATIVEDIR", NATIVE_LIB_DIR, true);
+            Os.setenv("JAVA_HOME", jreHome.getAbsolutePath(), true);
+            Os.setenv("HOME", Tools.DIR_GAME_HOME, true);
+            Os.setenv("TMPDIR", Tools.DIR_CACHE.getAbsolutePath(), true);
+        }catch (ErrnoException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static void preprocessUserArgs(List<String> args) {
@@ -173,29 +212,43 @@ public class JavaRunner {
                 case "-XX:+UseTransparentHugePages":
                 case "-XX:+UseLargePagesInMetaspace":
                 case "-XX:+UseLargePages":
-                case "-XX:ActiveProcessorCount":
                     iterator.remove();
                     break;
                 default:
-                    if(arg.startsWith("-Xms") || arg.startsWith("-Xmx")) iterator.remove();
+                    if(arg.startsWith("-Xms") || arg.startsWith("-Xmx") || arg.startsWith("-XX:ActiveProcessorCount")) iterator.remove();
             }
 
         }
     }
 
-    public static void startJvm(Runtime runtime, List<String> userArgs, List<String> classpathEntries, String mainClass, List<String> applicationArgs) throws VMLoadException{
+    /**
+     * Start the Java(tm) Virtual Machine.
+     * @param runtime the Runtime that we're starting.
+     * @param vmArgs the command line parameters for the virtual machine
+     * @param classpathEntries the absolute path for each classpath entry
+     * @param mainClass the application main class
+     * @param applicationArgs the application arguments
+     * @throws VMLoadException if an error occurred during VM loading
+     */
+    public static void startJvm(Runtime runtime, List<String> vmArgs, List<String> classpathEntries, String mainClass, List<String> applicationArgs) throws VMLoadException{
         File runtimeHomeDir = MultiRTUtils.getRuntimeHome(runtime.name);
-        String vmPath = findVmPath(runtimeHomeDir, runtime.arch);
+        File vmPath = findVmPath(runtimeHomeDir, runtime.arch);
+        if(vmPath == null) {
+            throw new VMLoadException("Unable to find the Java VM", 0, -1);
+        }
 
-        preprocessUserArgs(userArgs);
-        List<String> runtimeArgs = getJavaArgs(runtimeHomeDir.getAbsolutePath(), userArgs);
+        preprocessUserArgs(vmArgs);
+        List<String> runtimeArgs = getJavaArgs(runtimeHomeDir.getAbsolutePath(), vmArgs);
         getCacioJavaArgs(runtimeArgs,runtime.javaVersion == 8);
 
         runtimeArgs.add("-XX:ActiveProcessorCount=" + java.lang.Runtime.getRuntime().availableProcessors());
 
         JREUtils.initializeHooks();
 
-        nativeLoadJVM(vmPath, runtimeArgs.toArray(new String[0]), classpathEntries.toArray(new String[0]), mainClass, applicationArgs.toArray(new String[0]));
+        setImmutableEnvVars(runtimeHomeDir);
+        relocateLdLibPath(vmPath, null);
+
+        nativeLoadJVM(vmPath.getAbsolutePath(), runtimeArgs.toArray(new String[0]), classpathEntries.toArray(new String[0]), mainClass, applicationArgs.toArray(new String[0]));
     }
 
     public static native boolean nativeLoadJVM(String vmPath, String[] javaArgs, String[] classpath, String mainClass, String[] appArgs) throws VMLoadException;
