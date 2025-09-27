@@ -93,7 +93,6 @@
 
     <!-- MainActivity: strings -->
     <string name="mcn_exit_title">एप्लिकेशन/गेम कोड %d के साथ बंद हो गया, अधिक जानकारी के लिए latestlog.txt देखें।</string>
-    <string name="mcn_signal_title">एप्लिकेशन/गेम घातक सिग्नल %d द्वारा निरस्त किया गया, अधिक जानकारी के लिए latestlog.txt देखें।</string>
     <string name="mcn_exit_confirm">क्या आप वाकई ज़बरदस्ती बंद करना चाहते हैं?</string>
     <string name="mcn_check_fail_vulkan_support">ज़िंक (वल्कन) रेंडरर इस डिवाइस पर समर्थित नहीं/नहीं चलेगा  है!</string>
 

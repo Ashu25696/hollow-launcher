@@ -30,17 +30,18 @@ public class ExitActivity extends AppCompatActivity {
             isSignal = extras.getBoolean("isSignal", false);
         }
 
-        int message = isSignal ? R.string.mcn_signal_title : R.string.mcn_exit_title;
+        String message = isSignal ? getString(R.string.mcn_abort_title) : getString(R.string.mcn_exit_title, code);
 
         new AlertDialog.Builder(this)
-                .setMessage(getString(message,code))
+                .setMessage(message)
                 .setPositiveButton(R.string.main_share_logs, (dialog, which) -> shareLog(this))
                 .setOnDismissListener(dialog -> ExitActivity.this.finish())
                 .show();
     }
 
+    @SuppressWarnings("unused") //used by native jre_launcher_new
     public static void showExitMessage(Context ctx, int code, boolean isSignal) {
-        if(!isSignal && code == 0) {
+        if((!isSignal && code == 0) || ctx == null) {
             System.exit(0);
             return;
         }

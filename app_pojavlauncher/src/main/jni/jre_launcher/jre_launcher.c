@@ -7,6 +7,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <linux/futex.h>
 #include "utils.h"
 #include "load_stages.h"
 #include "elf_hinter.h"
@@ -24,12 +26,18 @@ typedef struct {
     JavaVM *vm;
 } java_vm_t;
 
-struct {
-    JavaVM *host_vm;
-    jmethodID host_exit_method;
-    jclass host_exit_class;
-    jobject vm_exit_context;
-} vm_exit_data;
+extern void setup_abort_wait();
+extern _Noreturn void abort_call(int code, bool is_signal);
+
+// Android 7+ requires the hinter to to provide proper library load paths.
+static bool apiRequiresHints() {
+    static bool reqHints, reqReady = false;
+    if(!reqReady) {
+        reqHints = android_get_device_api_level() >= 24;
+        reqReady = true;
+    }
+    return reqHints;
+}
 
 void throwException(JNIEnv *env, jint loadStage, jint errorCode, const char* errorInfo) {
     jclass loadException = (*env)->FindClass(env, "net/kdt/pojavlaunch/utils/jre/VMLoadException");
@@ -47,27 +55,12 @@ void throwException(JNIEnv *env, jint loadStage, jint errorCode, const char* err
     (*env)->Throw(env, throwable);
 }
 
-_Noreturn static void callExit(int code, bool isAbort) {
-    JavaVM *vm = vm_exit_data.host_vm;
-    JNIEnv *env;
-    jint result = (*vm)->GetEnv(vm, (void**)&env, JNI_VERSION_1_6);
-    if(result == JNI_EDETACHED) {
-        result = (*vm)->AttachCurrentThread(vm, &env, NULL);
-    }
-    if(result != JNI_OK) {
-        abort();
-    }
-    // This will call System.exit()
-    (*env)->CallStaticVoidMethod(env, vm_exit_data.host_exit_class, vm_exit_data.host_exit_method, vm_exit_data.vm_exit_context, code, isAbort);
-    while (true) {}
-}
-
 _Noreturn static void vm_exit(int code) {
-    callExit(code, false);
+    abort_call(code, false);
 }
 
 _Noreturn static void vm_abort() {
-    callExit(0, true);
+    abort_call(0, true);
 }
 
 static bool loadJavaVM(java_vm_t* java_vm, const char* jvm_path) {
@@ -79,8 +72,35 @@ static bool loadJavaVM(java_vm_t* java_vm, const char* jvm_path) {
     return java_vm->JNI_CreateJavaVM != NULL;
 }
 
+typedef struct {
+    hinter_t awt;
+    hinter_t nio;
+    hinter_t instrument;
+} vm_hinter_t;
 
-static bool initializeJavaVM(java_vm_t* java_vm, JNIEnv *env, jstring* vmpath, jobjectArray java_args) {
+// Some preloaded libs are still required. The main one is awt_headless, we must force Android to
+// discover the correct version of libawt_xawt first.
+// Separate hooks for agents are required because loading agents requires libinstrument which can't be loaded
+// through our class loader hooks.
+void vm_hinter_setup(vm_hinter_t* hinter, bool hasJavaAgents) {
+    if(!apiRequiresHints()) return;
+    hinter_process(&hinter->awt, "libawt_headless.so");
+    hinter_process(&hinter->instrument, "libnio.so");
+    if(hasJavaAgents) {
+        hinter_process(&hinter->nio, "libinstrument.so");
+    }
+}
+
+void vm_hinter_free(vm_hinter_t* hinter, bool hasJavaAgents) {
+    if(!apiRequiresHints()) return;
+    hinter_free(&hinter->awt);
+    hinter_free(&hinter->nio);
+    if(hasJavaAgents) {
+        hinter_free(&hinter->instrument);
+    }
+}
+
+static bool initializeJavaVM(java_vm_t* java_vm, JNIEnv *env, jstring* vmpath, jobjectArray java_args, bool hasJavaAgents) {
     char* fail_msg;
 #define FAIL(msg) {fail_msg = msg; goto fail;}
 
@@ -114,7 +134,10 @@ static bool initializeJavaVM(java_vm_t* java_vm, JNIEnv *env, jstring* vmpath, j
     initArgs.ignoreUnrecognized = JNI_TRUE;
     initArgs.version = JNI_VERSION_1_6;
 
+    vm_hinter_t vh;
+    vm_hinter_setup(&vh, hasJavaAgents);
     jint result = java_vm->JNI_CreateJavaVM(&java_vm->vm, &java_vm->vm_env, &initArgs);
+    vm_hinter_free(&vh, hasJavaAgents);
 
     free_char_array(env, java_args, user_args);
 
@@ -188,17 +211,31 @@ static void unloadJavaVM(java_vm_t* java_vm) {
     dlclose(java_vm->handle);
 }
 
-
+static void prepareSignalHandlers() {
+    // Unset all signal handlers to create a good slate for JVM signal detection.
+    struct sigaction clean_sa;
+    memset(&clean_sa, 0, sizeof (struct sigaction));
+    for(int sigid = SIGHUP; sigid < NSIG; sigid++) {
+        // For some reason Android specifically checks if you set SIGSEGV to SIG_DFL.
+        // There's probably a good reason for that but the signal handler here is
+        // temporary and will be replaced by the Java VM's signal/crash handler.
+        // Work around the warning by using SIG_IGN for SIGSEGV
+        if(sigid == SIGSEGV) clean_sa.sa_handler = SIG_IGN;
+        else clean_sa.sa_handler = SIG_DFL;
+        sigaction(sigid, &clean_sa, NULL);
+    }
+}
 
 extern bool installClassLoaderHooks(JNIEnv *env, JNIEnv* vm_env);
 
 JNIEXPORT jboolean JNICALL
-Java_net_kdt_pojavlaunch_utils_jre_JavaRunner_nativeLoadJVM(JNIEnv *env, jclass clazz, jstring vmpath, jobjectArray java_args, jobjectArray classpath, jstring mainClass, jobjectArray appArgs) {
+Java_net_kdt_pojavlaunch_utils_jre_JavaRunner_nativeLoadJVM(JNIEnv *env, jclass clazz, jstring vmpath, jobjectArray java_args, jobjectArray classpath, jstring mainClass, jobjectArray appArgs, jboolean hasJavaAgents) {
     java_vm_t java_vm;
-    if(!initializeJavaVM(&java_vm, env, vmpath, java_args)) return JNI_FALSE;
+    setup_abort_wait();
+    prepareSignalHandlers();
+    if(!initializeJavaVM(&java_vm, env, vmpath, java_args, hasJavaAgents)) return JNI_FALSE;
     JNIEnv *vm_env = java_vm.vm_env;
-    if(android_get_device_api_level() >= 24) {
-        // Android 7+ requires the hinter to to provide proper library load paths.
+    if(apiRequiresHints()) {
         if(!installClassLoaderHooks(env, vm_env)) return JNI_FALSE;
     }
 
@@ -227,15 +264,4 @@ Java_net_kdt_pojavlaunch_utils_jre_JavaRunner_nativeLoadJVM(JNIEnv *env, jclass 
         return JNI_FALSE;
     }
     return JNI_TRUE;
-}
-
-
-JNIEXPORT void JNICALL
-Java_net_kdt_pojavlaunch_utils_jre_JavaRunner_nativeSetupExit(JNIEnv *env, jclass clazz,
-                                                              jobject context) {
-    (*env)->GetJavaVM(env, &vm_exit_data.host_vm);
-    jclass class = (*env)->FindClass(env, "net/kdt/pojavlaunch/ExitActivity");
-    vm_exit_data.host_exit_class  = (*env)->NewGlobalRef(env, class);
-    vm_exit_data.host_exit_method = (*env)->GetStaticMethodID(env, class, "showExitMessage", "(Landroid/content/Context;IZ)V");
-    vm_exit_data.vm_exit_context = (*env)->NewGlobalRef(env, context);
 }

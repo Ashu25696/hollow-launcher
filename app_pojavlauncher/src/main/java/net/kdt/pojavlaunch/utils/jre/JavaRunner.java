@@ -160,9 +160,10 @@ public class JavaRunner {
         File vmDir = Objects.requireNonNull(vmPath.getParentFile());
         File libsDir = Objects.requireNonNull(vmDir.getParentFile());
         StringBuilder libPathBuilder =  new StringBuilder()
+                .append(libsDir.getAbsolutePath()).append(":")
                 .append(NATIVE_LIB_DIR).append(':')
                 .append(vmDir.getAbsolutePath()).append(':')
-                .append(libsDir.getAbsolutePath());
+                .append(new File(libsDir, "jli").getAbsolutePath());
 
         if(extraDirs != null) for(String path : extraDirs) {
             libPathBuilder.append(':').append(path);
@@ -188,11 +189,14 @@ public class JavaRunner {
         }
     }
 
-    private static void preprocessUserArgs(List<String> args) {
+    private static boolean preprocessUserArgs(List<String> args) {
         ListIterator<String> iterator = args.listIterator();
+        boolean hasJavaAgent = false;
         while(iterator.hasNext()) {
             String arg = iterator.next();
             switch (arg) {
+                case "-p":
+                    arg = "--module-path";
                 case "--add-reads":
                 case "--add-exports":
                 case "--add-opens":
@@ -216,9 +220,10 @@ public class JavaRunner {
                     break;
                 default:
                     if(arg.startsWith("-Xms") || arg.startsWith("-Xmx") || arg.startsWith("-XX:ActiveProcessorCount")) iterator.remove();
+                    if(!hasJavaAgent && arg.startsWith("-javaagent:")) hasJavaAgent = true;
             }
-
         }
+        return hasJavaAgent;
     }
 
     /**
@@ -237,7 +242,7 @@ public class JavaRunner {
             throw new VMLoadException("Unable to find the Java VM", 0, -1);
         }
 
-        preprocessUserArgs(vmArgs);
+        boolean hasJavaAgent = preprocessUserArgs(vmArgs);
         List<String> runtimeArgs = getJavaArgs(runtimeHomeDir.getAbsolutePath(), vmArgs);
         getCacioJavaArgs(runtimeArgs,runtime.javaVersion == 8);
 
@@ -248,9 +253,9 @@ public class JavaRunner {
         setImmutableEnvVars(runtimeHomeDir);
         relocateLdLibPath(vmPath, null);
 
-        nativeLoadJVM(vmPath.getAbsolutePath(), runtimeArgs.toArray(new String[0]), classpathEntries.toArray(new String[0]), mainClass, applicationArgs.toArray(new String[0]));
+        nativeLoadJVM(vmPath.getAbsolutePath(), runtimeArgs.toArray(new String[0]), classpathEntries.toArray(new String[0]), mainClass, applicationArgs.toArray(new String[0]), hasJavaAgent);
     }
 
-    public static native boolean nativeLoadJVM(String vmPath, String[] javaArgs, String[] classpath, String mainClass, String[] appArgs) throws VMLoadException;
+    public static native boolean nativeLoadJVM(String vmPath, String[] javaArgs, String[] classpath, String mainClass, String[] appArgs, boolean hasJavaAgents) throws VMLoadException;
     public static native void nativeSetupExit(Context context);
 }

@@ -32,9 +32,7 @@ import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.WindowManager;
-import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -736,44 +734,13 @@ public final class Tools {
         fragmentActivity.getSupportFragmentManager().popBackStack();
     }
 
-    public static void installMod(Activity activity, boolean customJavaArgs) {
-        if (MultiRTUtils.getExactJreName(8) == null) {
-            Toast.makeText(activity, R.string.multirt_nojava8rt, Toast.LENGTH_LONG).show();
-            return;
-        }
-
-        if(!customJavaArgs){ // Launch the intent to get the jar file
-            if(!(activity instanceof LauncherActivity))
-                throw new IllegalStateException("Cannot start Mod Installer without LauncherActivity");
-            LauncherActivity launcherActivity = (LauncherActivity)activity;
-            launcherActivity.modInstallerLauncher.launch(null);
-            return;
-        }
-
-        // install mods with custom arguments
-        final EditText editText = new EditText(activity);
-        editText.setSingleLine();
-        editText.setHint("-jar/-cp /path/to/file.jar ...");
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(activity)
-                .setTitle(R.string.alerttitle_installmod)
-                .setNegativeButton(android.R.string.cancel, null)
-                .setView(editText)
-                .setPositiveButton(android.R.string.ok, (di, i) -> {
-                    Intent intent = new Intent(activity, JavaGUILauncherActivity.class);
-                    intent.putExtra("javaArgs", editText.getText().toString());
-                    activity.startActivity(intent);
-                });
-        builder.show();
-    }
-
     /** Launch the mod installer activity. The Uri must be from our own content provider or
      * from ACTION_OPEN_DOCUMENT
      */
-    public static void launchModInstaller(Activity activity, @NonNull Uri uri){
-        Intent intent = new Intent(activity, JavaGUILauncherActivity.class);
+    public static void launchModInstaller(Context context, @NonNull Uri uri){
+        Intent intent = new Intent(context, JavaGUILauncherActivity.class);
         intent.putExtra("modUri", uri);
-        activity.startActivity(intent);
+        context.startActivity(intent);
     }
 
 

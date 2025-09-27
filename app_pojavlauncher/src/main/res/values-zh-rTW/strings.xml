@@ -77,7 +77,6 @@
     <string name="global_default">預設</string>
     <!-- MainActivity: strings -->
     <string name="mcn_exit_title">應用程式/遊戲以代碼 %d 結束，請查看 latestlog.txt 以取得更多詳細資訊。</string>
-    <string name="mcn_signal_title">應用程式/遊戲發生嚴重錯誤（%d）並已中止，請檢查 latestlog.txt 以取得更多資訊。</string>
     <string name="mcn_exit_confirm">您確定要強制關閉嗎？</string>
     <string name="mcn_check_fail_vulkan_support">這部裝置不支援 Zink 渲染器！</string>
     <!-- MainActivity: Control buttons -->

@@ -93,7 +93,6 @@
 
     <!-- MainActivity: strings -->
     <string name="mcn_exit_title">অ্যাপ্লিকেশন/গেম কোড %d সহ বন্ধ হয়েছে, আরও বিস্তারিত latestlog.txt ফাইলে দেখুন।</string>
-    <string name="mcn_signal_title">অ্যাপ্লিকেশন/গেম মারাত্মক সিগনাল %d দ্বারা বন্ধ হয়েছে, আরও বিস্তারিত latestlog.txt ফাইলে দেখুন।</string>
     <string name="mcn_exit_confirm">আপনি কি জোরপূর্বক বন্ধ করতে চান?</string>
     <string name="mcn_check_fail_vulkan_support">এই ডিভাইসে Zink (Vulkan) রেন্ডারার সমর্থিত নয়!</string>
 

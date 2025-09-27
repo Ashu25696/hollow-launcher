@@ -77,7 +77,6 @@
     <string name="global_default">Padrão</string>
     <!-- MainActivity: strings -->
     <string name="mcn_exit_title">Aplicativo/jogo fechou com o código %d, verifique latestlog.txt para mais detalhes.</string>
-    <string name="mcn_signal_title">Aplicativo/jogo fechou com o código %d, verifique latestlog.txt para mais detalhes.</string>
     <string name="mcn_exit_confirm">Tem certeza que deseja forçar o encerramento?</string>
     <string name="mcn_check_fail_vulkan_support">O renderizador Zink (Vulkan) não é compatível com este dispositivo!</string>
     <!-- MainActivity: Control buttons -->

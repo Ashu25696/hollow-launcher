@@ -5,6 +5,7 @@
 #include <jni.h>
 #include <stdbool.h>
 #include <dlfcn.h>
+#include <stdlib.h>
 #include "elf_hinter.h"
 #include "load_stages.h"
 
@@ -45,7 +46,6 @@ static void hook_ClassLoader_00024NativeLibrary_load(JNIEnv *env, jobject this, 
     hinter_free(&hinter);
 }
 
-
 bool installClassLoaderHooks(JNIEnv *env, JNIEnv* vm_env) {
     void* libjava = dlopen("libjava.so", RTLD_NOLOAD);
     if(libjava == NULL) {
@@ -59,7 +59,7 @@ bool installClassLoaderHooks(JNIEnv *env, JNIEnv* vm_env) {
     if(hookFunc_j17 != NULL) {
         hookClass = "jdk/internal/loader/NativeLibraries";
         hookMethod.name = "load";
-        hookMethod.signature = "(Ljdk/internal/loader/NativeLibraries/NativeLibraryImpl;Ljava/lang/String;ZZ)Z";
+        hookMethod.signature = "(Ljdk/internal/loader/NativeLibraries$NativeLibraryImpl;Ljava/lang/String;ZZ)Z";
         hookMethod.fnPtr = hook_NativeLibraries_load;
         original_func.j17p = hookFunc_j17;
     }else if(hookFunc_j8 != NULL) {
@@ -77,6 +77,7 @@ bool installClassLoaderHooks(JNIEnv *env, JNIEnv* vm_env) {
     }
     jint result = (*vm_env)->RegisterNatives(vm_env, hookedClass, &hookMethod, 1);
     if(result != JNI_OK) {
+        if((*vm_env)->ExceptionCheck(vm_env)) (*vm_env)->ExceptionDescribe(vm_env);
         throwException(env, STAGE_INSERT_HOOKS, result, "Cannot register hooks");
         return false;
     }

@@ -101,20 +101,27 @@ static bool hinter_lookup_lib(const char* lib_name, char lib_path[PATH_MAX]) {
 }
 
 static bool inner_hinter_process(void** popstack, int* stack_top, const char* lib_name) {
-    LOGI("Process: %s", lib_name);
     void* lib_noload = dlopen(lib_name, RTLD_NOLOAD);
     if(lib_noload != NULL) {
-        LOGI("Hint for %s not required: already loaded", lib_name);
         dlclose(lib_noload);
         return true;
     }
     char lib_path[PATH_MAX];
     bool result = hinter_lookup_lib(lib_name, lib_path);
-    if(!result) return false;
+    if(!result) {
+        LOGW("Hinter lookup failed: %s", lib_name);
+        return false;
+    }
     result = hinter_for_each_dependency(lib_path, popstack, stack_top);
-    if(!result) return false;
+    if(!result) {
+        LOGW("Hinter dep scan failed: %s", lib_path);
+        return false;
+    }
     void* hint_open = dlopen(lib_path, RTLD_GLOBAL);
-    if(hint_open == NULL) return false;
+    if(hint_open == NULL) {
+        LOGW("Hinter load failed: %s", dlerror());
+        return false;
+    }
     popstack[(*stack_top)++] = hint_open;
     return true;
 }

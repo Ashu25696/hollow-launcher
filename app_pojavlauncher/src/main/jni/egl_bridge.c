@@ -14,10 +14,6 @@
 #include "ctxbridges/osmesa_loader.h"
 #include "driver_helper/nsbypass.h"
 
-#ifdef GLES_TEST
-#include <GLES2/gl2.h>
-#endif
-
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
 #include <android/rect.h>
@@ -38,19 +34,6 @@
 // This means that you are forced to have this function/variable for ABI compatibility
 #define ABI_COMPAT __attribute__((unused))
 
-struct PotatoBridge {
-
-    /* EGLContext */ void* eglContext;
-    /* EGLDisplay */ void* eglDisplay;
-    /* EGLSurface */ void* eglSurface;
-/*
-    void* eglSurfaceRead;
-    void* eglSurfaceDraw;
-*/
-};
-EGLConfig config;
-struct PotatoBridge potatoBridge;
-
 #include "ctxbridges/egl_loader.h"
 #include "ctxbridges/osmesa_loader.h"
 #include "linkedlist.h"
@@ -63,25 +46,6 @@ extern void destroyAllCursors();
 
 EXTERNAL_API void pojavTerminate() {
     printf("EGLBridge: Terminating\n");
-
-    switch (pojav_environ->config_renderer) {
-        case RENDERER_GL4ES: {
-            eglMakeCurrent_p(potatoBridge.eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-            eglDestroySurface_p(potatoBridge.eglDisplay, potatoBridge.eglSurface);
-            eglDestroyContext_p(potatoBridge.eglDisplay, potatoBridge.eglContext);
-            eglTerminate_p(potatoBridge.eglDisplay);
-            eglReleaseThread_p();
-
-            potatoBridge.eglContext = EGL_NO_CONTEXT;
-            potatoBridge.eglDisplay = EGL_NO_DISPLAY;
-            potatoBridge.eglSurface = EGL_NO_SURFACE;
-        } break;
-
-            //case RENDERER_VIRGL:
-        case RENDERER_VK_ZINK: {
-            // Nothing to do here
-        } break;
-    }
 
     destroyAllCursors();
 }

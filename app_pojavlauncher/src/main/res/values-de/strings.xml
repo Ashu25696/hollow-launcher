@@ -77,7 +77,6 @@
     <string name="global_default">Standard</string>
     <!-- MainActivity: strings -->
     <string name="mcn_exit_title">Anwendung/Spiel wurde mit dem Code %d beendet. Für weitere Details, siehe latestlog.txt.</string>
-    <string name="mcn_signal_title">Anwendung/Spiel wurde mit dem Fehlercode %d beendet. Für weitere Details, siehe latestlog.txt.</string>
     <string name="mcn_exit_confirm">Beenden wirklich erzwingen?</string>
     <string name="mcn_check_fail_vulkan_support">Der Zink-Renderer (Vulkan) wird auf diesem Gerät nicht unterstützt!</string>
     <!-- MainActivity: Control buttons -->

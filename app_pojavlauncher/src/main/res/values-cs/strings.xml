@@ -77,7 +77,6 @@
     <string name="global_default">Výchozí</string>
     <!-- MainActivity: strings -->
     <string name="mcn_exit_title">Aplikace/Hra spadla s kódem %d, zkontroluj latestlog.txt pro více informací.</string>
-    <string name="mcn_signal_title">Aplikace/Hra skončila s fatálním signálem %d, zkontroluj latestlog.txt pro detaily.</string>
     <string name="mcn_exit_confirm">Opravdu chcete vynutit ukončení?</string>
     <string name="mcn_check_fail_vulkan_support">Vykreslovač Zink (Vulkan) není v tomto zařízení podporován!</string>
     <!-- MainActivity: Control buttons -->

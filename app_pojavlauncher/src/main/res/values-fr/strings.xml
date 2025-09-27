@@ -77,7 +77,6 @@
     <string name="global_default">Par défaut</string>
     <!-- MainActivity: strings -->
     <string name="mcn_exit_title">L\'Application/Jeu a quitté avec le code %d, vérifiez le fichier latestlog.txt pour plus de détails.</string>
-    <string name="mcn_signal_title">L\'application/Le jeu s\'est fermé(e) avec le code %d, vérifiez le fichier latestlog.txt pour plus de détails.</string>
     <string name="mcn_exit_confirm">Voulez-vous vraiment forcer la fermeture ?</string>
     <string name="mcn_check_fail_vulkan_support">Le moteur de rendu Zink (Vulkan) n\'est pas pris en charge sur votre appareil !</string>
     <!-- MainActivity: Control buttons -->

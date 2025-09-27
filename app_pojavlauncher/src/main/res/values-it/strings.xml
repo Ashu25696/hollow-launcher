@@ -77,7 +77,6 @@
     <string name="global_default">Predefinito</string>
     <!-- MainActivity: strings -->
     <string name="mcn_exit_title">L\'applicazione/gioco si è chiuso con il codice %d, controlla il lastlog.txt per più dettagli.</string>
-    <string name="mcn_signal_title">Applicazione/gioco interrotto dal segnale fatale %d, controllare latestlog.txt per maggiori dettagli.</string>
     <string name="mcn_exit_confirm">Sei sicuro di voler eseguire una chiusura forzata?</string>
     <string name="mcn_check_fail_vulkan_support">Il renderer Zink (Vulkan) non è supportato su questo dispositivo!</string>
     <!-- MainActivity: Control buttons -->

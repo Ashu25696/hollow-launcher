@@ -89,7 +89,7 @@ public abstract class ForgelikeUtils {
         String hash = DownloadUtils.downloadString(downloadUrl + ".sha1");
         File installerLocation = new File(Tools.DIR_CACHE, mCachePrefix + "-installer-" + fullVersion + ".jar");
         InstanceInstaller instanceInstaller = new InstanceInstaller();
-        instanceInstaller.commandLineArgs = "-Duser.language=en -Duser.country=US -javaagent:" + Tools.DIR_DATA + "/forge_installer/forge_installer.jar";
+        instanceInstaller.commandLineArgs = List.of("-Duser.language=en", "-Duser.country=US", "-javaagent:"+Tools.DIR_DATA+"/forge_installer/forge_installer.jar");
         instanceInstaller.installerJar = installerLocation.getAbsolutePath();
         instanceInstaller.installerSha1 = hash;
         instanceInstaller.installerDownloadUrl = downloadUrl;
