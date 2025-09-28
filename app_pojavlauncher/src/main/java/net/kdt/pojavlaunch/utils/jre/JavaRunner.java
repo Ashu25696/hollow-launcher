@@ -247,6 +247,14 @@ public class JavaRunner {
         getCacioJavaArgs(runtimeArgs,runtime.javaVersion == 8);
 
         runtimeArgs.add("-XX:ActiveProcessorCount=" + java.lang.Runtime.getRuntime().availableProcessors());
+        StringBuilder classpathBuilder = new StringBuilder().append("-Djava.class.path=");
+        boolean first = true;
+        for(String entry : classpathEntries) {
+            if(first) first = false;
+            else classpathBuilder.append(':');
+            classpathBuilder.append(entry);
+        }
+        runtimeArgs.add(classpathBuilder.toString());
 
         JREUtils.initializeHooks();
 

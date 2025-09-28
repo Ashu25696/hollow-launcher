@@ -32,7 +32,6 @@ import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -385,7 +384,6 @@ public class GameRunner {
             }
             classpath.add(s);
         }
-        classpath.addAll(Arrays.asList(libClasspath));
         classpath.trimToSize();
 
         return classpath;

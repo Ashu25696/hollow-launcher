@@ -156,49 +156,16 @@ static bool initializeJavaVM(java_vm_t* java_vm, JNIEnv *env, jstring* vmpath, j
 #undef FAIL
 }
 
-static jobject initalizeClassLoader(JNIEnv *env, JNIEnv* vm_env, jobjectArray classpath) {
-#define EXCEPTION_CHECK if((*vm_env)->ExceptionCheck(vm_env)) {(*vm_env)->ExceptionDescribe(vm_env); return NULL;}
-    jclass vmc_url = (*vm_env)->FindClass(vm_env, "java/net/URL"); EXCEPTION_CHECK
-    jclass vmc_classloader = (*vm_env)->FindClass(vm_env, "java/net/URLClassLoader"); EXCEPTION_CHECK
-
-    jmethodID vm_url_constructor = (*vm_env)->GetMethodID(vm_env, vmc_url, "<init>", "(Ljava/lang/String;)V"); EXCEPTION_CHECK
-    jmethodID vm_url_constructor_context = (*vm_env)->GetMethodID(vm_env, vmc_url, "<init>", "(Ljava/net/URL;Ljava/lang/String;)V"); EXCEPTION_CHECK
-    jmethodID vm_urlclassloader_constructor = (*vm_env)->GetMethodID(vm_env, vmc_classloader, "<init>", "([Ljava/net/URL;)V"); EXCEPTION_CHECK
-
-    jstring baseContextString = (*vm_env)->NewStringUTF(vm_env, "file://"); EXCEPTION_CHECK
-    jobject contextUrl = (*vm_env)->NewObject(vm_env, vmc_url, vm_url_constructor, baseContextString); EXCEPTION_CHECK
-    (*vm_env)->DeleteLocalRef(vm_env, baseContextString);
-
-    jint classpathEntries = (*env)->GetArrayLength(env, classpath);
-    jobjectArray classpathUrls = (*vm_env)->NewObjectArray(vm_env, classpathEntries, vmc_url, NULL); EXCEPTION_CHECK
-
-    for(jint i = 0; i < classpathEntries; i++) {
-        jstring classpathEntryObj = (*env)->GetObjectArrayElement(env, classpath, i);
-        if(classpathEntryObj == NULL) return NULL;
-        const char* classpathEntry = (*env)->GetStringUTFChars(env, classpathEntryObj, NULL);
-        if(classpathEntry == NULL) return NULL;
-        jstring classpathEntryVm = (*vm_env)->NewStringUTF(vm_env, classpathEntry); EXCEPTION_CHECK
-        jobject classpathEntryUrl = (*vm_env)->NewObject(vm_env, vmc_url, vm_url_constructor_context, contextUrl, classpathEntryVm); EXCEPTION_CHECK
-        (*env)->ReleaseStringUTFChars(env, classpathEntryObj, classpathEntry);
-        (*env)->DeleteLocalRef(env, classpathEntryObj);
-        (*vm_env)->SetObjectArrayElement(vm_env, classpathUrls, i, classpathEntryUrl); EXCEPTION_CHECK
-        (*vm_env)->DeleteLocalRef(vm_env, classpathEntryUrl);
-    }
-
-    jobject urlClassLoader = (*vm_env)->NewObject(vm_env, vmc_classloader, vm_urlclassloader_constructor, classpathUrls); EXCEPTION_CHECK
-    (*vm_env)->DeleteLocalRef(vm_env, classpathUrls);
-    return urlClassLoader;
-#undef EXCEPTION_CHECK
-}
-
-static bool executeMain(JNIEnv* vm_env, jobject urlClassLoader, const char* mainClass, jobjectArray vm_appArgs) {
+static bool executeMain(JNIEnv* vm_env, const char* mainClass, jobjectArray vm_appArgs) {
 #define EXCEPTION_CHECK if((*vm_env)->ExceptionCheck(vm_env)) {(*vm_env)->ExceptionDescribe(vm_env); return false;}
-    jclass classLoaderClass = (*vm_env)->GetObjectClass(vm_env, urlClassLoader); EXCEPTION_CHECK
-    jmethodID classloader_loadClass = (*vm_env)->GetMethodID(vm_env, classLoaderClass, "loadClass", "(Ljava/lang/String;Z)Ljava/lang/Class;"); EXCEPTION_CHECK
-    (*vm_env)->DeleteLocalRef(vm_env, classLoaderClass);
-    jstring className = (*vm_env)->NewStringUTF(vm_env, mainClass); EXCEPTION_CHECK
-    jclass mainClassObj = (jclass) (*vm_env)->CallObjectMethod(vm_env, urlClassLoader, classloader_loadClass, className, JNI_TRUE); EXCEPTION_CHECK
-    (*vm_env)->DeleteLocalRef(vm_env, className);
+    size_t classNameLen = strlen(mainClass) + 1;
+    char mainClassSlashed[classNameLen];
+    for(size_t i = 0; i < classNameLen; i++) {
+        char nameChar = mainClass[i];
+        if(nameChar == '.') nameChar = '/';
+        mainClassSlashed[i] = nameChar;
+    }
+    jclass mainClassObj = (*vm_env)->FindClass(vm_env, mainClassSlashed); EXCEPTION_CHECK
     jmethodID mainMethod = (*vm_env)->GetStaticMethodID(vm_env, mainClassObj, "main", "([Ljava/lang/String;)V"); EXCEPTION_CHECK
     (*vm_env)->CallStaticVoidMethod(vm_env, mainClassObj, mainMethod, vm_appArgs); EXCEPTION_CHECK
     return true;
@@ -239,14 +206,6 @@ Java_net_kdt_pojavlaunch_utils_jre_JavaRunner_nativeLoadJVM(JNIEnv *env, jclass 
         if(!installClassLoaderHooks(env, vm_env)) return JNI_FALSE;
     }
 
-
-    jobject urlClassLoader = initalizeClassLoader(env, vm_env, classpath);
-    if(urlClassLoader == NULL) {
-        unloadJavaVM(&java_vm);
-        throwException(env, STAGE_LOAD_CLASSPATH, JNI_ERR, "Failed to create the class loader. Check latestlog.txt");
-        return JNI_FALSE;
-    }
-
     jint numAppArgs = (*env)->GetArrayLength(env, appArgs);
     const char** appArgsChar = convert_to_char_array(env, appArgs);
     jobjectArray vm_appArgs = convert_from_char_array(vm_env, appArgsChar, numAppArgs);
@@ -258,7 +217,7 @@ Java_net_kdt_pojavlaunch_utils_jre_JavaRunner_nativeLoadJVM(JNIEnv *env, jclass 
     strncpy(mainClassName, mainClassNameBuf, mainClassLen + 1);
     (*env)->ReleaseStringUTFChars(env, mainClass, mainClassNameBuf);
 
-    if(!executeMain(vm_env, urlClassLoader, mainClassName, vm_appArgs)) {
+    if(!executeMain(vm_env, mainClassName, vm_appArgs)) {
         unloadJavaVM(&java_vm);
         throwException(env, STAGE_RUN_MAIN, JNI_ERR, "Failed to start the main class. Check latestlog.txt");
         return JNI_FALSE;
