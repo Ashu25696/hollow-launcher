@@ -27,7 +27,7 @@ import java.util.TimeZone;
 
 public class JavaRunner {
 
-    private static void getCacioJavaArgs(List<String> javaArgList, boolean isJava8) {
+    private static boolean getCacioJavaArgs(List<String> javaArgList, boolean isJava8) {
         // Caciocavallo config AWT-enabled version
         javaArgList.add("-Djava.awt.headless=false");
         javaArgList.add("-Dcacio.managed.screensize=" + AWTCanvasView.AWT_CANVAS_WIDTH + "x" + AWTCanvasView.AWT_CANVAS_HEIGHT);
@@ -37,10 +37,18 @@ public class JavaRunner {
         if (isJava8) {
             javaArgList.add("-Dawt.toolkit=net.java.openjdk.cacio.ctc.CTCToolkit");
             javaArgList.add("-Djava.awt.graphicsenv=net.java.openjdk.cacio.ctc.CTCGraphicsEnvironment");
+            StringBuilder cacioClasspath = createCacioClasspath();
+            javaArgList.add(cacioClasspath.toString());
+            return false;
         } else {
+            File caciocavallo17AgentDir = new File(Tools.DIR_GAME_HOME, "caciocavallo17");
+            File[] cacioJars = caciocavallo17AgentDir.listFiles((file, s) ->s.endsWith(".jar"));
+            if(cacioJars == null || cacioJars.length < 1) {
+                return false;
+            }
+            javaArgList.add("-javaagent:"+cacioJars[0].getAbsolutePath());
             javaArgList.add("-Dawt.toolkit=com.github.caciocavallosilano.cacio.ctc.CTCToolkit");
             javaArgList.add("-Djava.awt.graphicsenv=com.github.caciocavallosilano.cacio.ctc.CTCGraphicsEnvironment");
-            javaArgList.add("-Djava.system.class.loader=com.github.caciocavallosilano.cacio.ctc.CTCPreloadClassLoader");
 
             javaArgList.add("--add-exports=java.desktop/java.awt=ALL-UNNAMED");
             javaArgList.add("--add-exports=java.desktop/java.awt.peer=ALL-UNNAMED");
@@ -57,17 +65,15 @@ public class JavaRunner {
             javaArgList.add("--add-opens=java.desktop/sun.font=ALL-UNNAMED");
             javaArgList.add("--add-opens=java.desktop/sun.java2d=ALL-UNNAMED");
             javaArgList.add("--add-opens=java.base/java.lang.reflect=ALL-UNNAMED");
+            return true;
         }
-
-        StringBuilder cacioClasspath = createCacioClasspath(isJava8);
-        javaArgList.add(cacioClasspath.toString());
     }
 
     @NonNull
-    private static StringBuilder createCacioClasspath(boolean isJava8) {
+    private static StringBuilder createCacioClasspath() {
         StringBuilder cacioClasspath = new StringBuilder();
-        cacioClasspath.append("-Xbootclasspath/").append(isJava8 ? "p" : "a");
-        File cacioDir = new File(Tools.DIR_GAME_HOME + "/caciocavallo" + (isJava8 ? "" : "17"));
+        cacioClasspath.append("-Xbootclasspath/p");
+        File cacioDir = new File(Tools.DIR_GAME_HOME, "caciocavallo");
         File[] cacioFiles = cacioDir.listFiles();
         if (cacioFiles != null) {
             for (File file : cacioFiles) {
@@ -243,8 +249,10 @@ public class JavaRunner {
         }
 
         boolean hasJavaAgent = preprocessUserArgs(vmArgs);
-        List<String> runtimeArgs = getJavaArgs(runtimeHomeDir.getAbsolutePath(), vmArgs);
-        getCacioJavaArgs(runtimeArgs,runtime.javaVersion == 8);
+        List<String> runtimeArgs = new ArrayList<>();
+        if(getCacioJavaArgs(runtimeArgs,runtime.javaVersion == 8)) hasJavaAgent = true;
+        runtimeArgs.addAll(getJavaArgs(runtimeHomeDir.getAbsolutePath(), vmArgs));
+
 
         runtimeArgs.add("-XX:ActiveProcessorCount=" + java.lang.Runtime.getRuntime().availableProcessors());
         StringBuilder classpathBuilder = new StringBuilder().append("-Djava.class.path=");
