@@ -261,9 +261,9 @@ public class JavaRunner {
         setImmutableEnvVars(runtimeHomeDir);
         relocateLdLibPath(vmPath, null);
 
-        nativeLoadJVM(vmPath.getAbsolutePath(), runtimeArgs.toArray(new String[0]), classpathEntries.toArray(new String[0]), mainClass, applicationArgs.toArray(new String[0]), hasJavaAgent);
+        nativeLoadJVM(vmPath.getAbsolutePath(), runtimeArgs.toArray(new String[0]), mainClass, applicationArgs.toArray(new String[0]), hasJavaAgent);
     }
 
-    public static native boolean nativeLoadJVM(String vmPath, String[] javaArgs, String[] classpath, String mainClass, String[] appArgs, boolean hasJavaAgents) throws VMLoadException;
+    public static native boolean nativeLoadJVM(String vmPath, String[] javaArgs, String mainClass, String[] appArgs, boolean hasJavaAgents) throws VMLoadException;
     public static native void nativeSetupExit(Context context);
 }

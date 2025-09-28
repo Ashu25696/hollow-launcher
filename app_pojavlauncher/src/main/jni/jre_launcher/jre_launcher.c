@@ -196,7 +196,7 @@ static void prepareSignalHandlers() {
 extern bool installClassLoaderHooks(JNIEnv *env, JNIEnv* vm_env);
 
 JNIEXPORT jboolean JNICALL
-Java_net_kdt_pojavlaunch_utils_jre_JavaRunner_nativeLoadJVM(JNIEnv *env, jclass clazz, jstring vmpath, jobjectArray java_args, jobjectArray classpath, jstring mainClass, jobjectArray appArgs, jboolean hasJavaAgents) {
+Java_net_kdt_pojavlaunch_utils_jre_JavaRunner_nativeLoadJVM(JNIEnv *env, jclass clazz, jstring vmpath, jobjectArray java_args, jstring mainClass, jobjectArray appArgs, jboolean hasJavaAgents) {
     java_vm_t java_vm;
     setup_abort_wait();
     prepareSignalHandlers();
