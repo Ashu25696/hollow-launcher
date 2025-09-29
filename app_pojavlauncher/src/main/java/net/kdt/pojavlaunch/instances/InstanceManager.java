@@ -1,5 +1,7 @@
 package net.kdt.pojavlaunch.instances;
 
+import com.google.gson.JsonSyntaxException;
+
 import net.kdt.pojavlaunch.Tools;
 import net.kdt.pojavlaunch.prefs.LauncherPreferences;
 import net.kdt.pojavlaunch.utils.FileUtils;
@@ -24,7 +26,7 @@ public class InstanceManager {
             Instance instance = JSONUtils.readFromFile(metadataLocation(instanceRoot), Instance.class);
             instance.mInstanceRoot = instanceRoot;
             return instance;
-        }catch (IOException e) {
+        }catch (IOException | JsonSyntaxException e) {
             return null;
         }
     }
