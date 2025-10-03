@@ -217,10 +217,14 @@ Java_net_kdt_pojavlaunch_utils_jre_JavaRunner_nativeLoadJVM(JNIEnv *env, jclass 
     strncpy(mainClassName, mainClassNameBuf, mainClassLen + 1);
     (*env)->ReleaseStringUTFChars(env, mainClass, mainClassNameBuf);
 
-    if(!executeMain(vm_env, mainClassName, vm_appArgs)) {
-        unloadJavaVM(&java_vm);
+    bool main_result = executeMain(vm_env, mainClassName, vm_appArgs);
+    (*java_vm.vm)->DestroyJavaVM(java_vm.vm);
+    unloadJavaVM(&java_vm);
+    if(!main_result) {
         throwException(env, STAGE_RUN_MAIN, JNI_ERR, "Failed to start the main class. Check latestlog.txt");
         return JNI_FALSE;
+    }else {
+        return JNI_TRUE;
     }
-    return JNI_TRUE;
+    // If the main method exits
 }
