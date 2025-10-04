@@ -207,6 +207,8 @@ public class GameRunner {
 
         javaArgList.addAll(getMinecraftJVMArgs(versionId));
 
+        javaArgList.addAll(JREUtils.parseJavaArguments(instance.getLaunchArgs()));
+
         JREUtils.setEnviroimentForGame(activity, rendererName);
         JREUtils.chdir(instance.getGameDirectory().getAbsolutePath());
 
