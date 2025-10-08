@@ -199,10 +199,6 @@
     <string name="global_delete">삭제</string>
     <string name="pedit_java_runtime">Java 런타임</string>
     <string name="pedit_renderer">렌더러</string>
-    <string name="arc_capes_title">Cosmetica 망토</string>
-    <string name="arc_capes_desc">Cosmetica 망토를 활성화합니다 (구 Arc)
-더 많은 정보를 위해 https://cosmetica.cc 를 방문해주세요.
-옵티파인이 필요합니다.</string>
     <string name="notif_channel_name">일반</string>
     <string name="lazy_service_default_title">Mojo 포그라운드 서비스</string>
     <string name="mcl_setting_veroption_installed">이미 설치되어 있는 버전입니다.</string>

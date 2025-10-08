@@ -284,7 +284,6 @@ afterEvaluate {
         registrar.setVariant(variant)
 
         registrar.projectJarDependency project(":forge_installer"), "components/forge_installer"
-        registrar.projectJarDependency project(":arc_dns_injector"), "components/arc_dns_injector"
         registrar.projectJarDependency project(":jre_lwjgl3glfw"), "components/lwjgl3"
 
 		if (variant.getName().toLowerCase().contains("full")) {

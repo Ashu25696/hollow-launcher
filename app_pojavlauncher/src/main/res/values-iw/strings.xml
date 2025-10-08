@@ -185,8 +185,6 @@
     <string name="global_delete">מחיקה</string>
     <string name="pedit_java_runtime">Java Runtime</string>
     <string name="pedit_renderer">רינדור</string>
-    <string name="arc_capes_title">שכמיות אסתטיות</string>
-    <string name="arc_capes_desc">מאפשר שכמיות מאת Cosmetica (לשעבר Arc). לקבלת מידע נוסף, בקרו ב- https://cosmetica.cc. דורש OptiFine.</string>
     <string name="notif_channel_name">כללי</string>
     <string name="lazy_service_default_title">שירות הרקע של Mojo</string>
     <string name="use_global_default">(השתמש בהגדרות ברירת המחדל הגלובליות)</string>

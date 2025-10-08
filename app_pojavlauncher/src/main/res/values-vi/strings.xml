@@ -230,8 +230,6 @@
     <string name="global_delete">Xóa</string>
     <string name="pedit_java_runtime">Java Runtime</string>
     <string name="pedit_renderer">Trình kết xuất</string>
-    <string name="arc_capes_title">Áo choàng Cosmetica</string>
-    <string name="arc_capes_desc">Sử dụng áo choàng từ dịch vụ Cosmetica (trước đây là Arc). Để biết thêm thông tin, truy cập https://cosmetica.cc. Yêu cầu có OptiFine.</string>
     <string name="color_default_hex" translatable="false">FFFF0000</string>
     <string name="notif_channel_name">Chung</string>
     <string name="notif_channel_id" translatable="false">channel_id</string>

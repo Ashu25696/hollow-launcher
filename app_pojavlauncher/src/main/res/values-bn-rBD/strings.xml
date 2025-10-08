@@ -240,8 +240,6 @@
     <string name="global_delete">মুছুন</string>
     <string name="pedit_java_runtime">জাভা রানটাইম</string>
     <string name="pedit_renderer">রেন্ডারার</string>
-    <string name="arc_capes_title">Cosmetica কেপস</string>
-    <string name="arc_capes_desc">Cosmetica থেকে কেপ সক্রিয় করে। আরও তথ্যের জন্য https://cosmetica.cc দেখুন। OptiFine প্রয়োজন।</string>
     <string name="notif_channel_name">সাধারণ</string>
     <string name="lazy_service_default_title">Mojo ফোরগ্রাউন্ড সার্ভিস</string>
     <string name="mcl_setting_veroption_installed">ইনস্টলকৃত</string>

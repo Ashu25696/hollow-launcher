@@ -173,8 +173,6 @@
     <string name="global_delete">削除</string>
     <string name="pedit_java_runtime">Javaランタイム</string>
     <string name="pedit_renderer">レンダラー</string>
-    <string name="arc_capes_title">コスメチカ・ケープズ</string>
-    <string name="arc_capes_desc">Cosmetica（以前のArc）のケープを有効にします。詳細については、https：//cosmetica.ccをご覧ください。 OptiFineが必要です。</string>
     <string name="notif_channel_name">一般</string>
     <string name="lazy_service_default_title">Mojo フォアグラウンドサービス</string>
     <string name="mcl_setting_veroption_installed">インストール済み</string>

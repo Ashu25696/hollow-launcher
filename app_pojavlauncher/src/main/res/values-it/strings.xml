@@ -202,8 +202,6 @@
     <string name="global_delete">Elimina</string>
     <string name="pedit_java_runtime">Runtime Java</string>
     <string name="pedit_renderer">Renderer</string>
-    <string name="arc_capes_title">Mantelli Cosmetica</string>
-    <string name="arc_capes_desc">Abilità i mantelli di Cosmetica (precedentemente Arc). Per ulteriori informazioni visita https://cosmetica.cc. Necessita OptiFine.</string>
     <string name="notif_channel_name">Generale</string>
     <string name="lazy_service_default_title">Servizio di Foreground Mojo</string>
     <string name="mcl_setting_veroption_installed">Installato</string>

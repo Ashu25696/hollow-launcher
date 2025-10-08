@@ -153,8 +153,6 @@
     <string name="global_delete">Șterge</string>
     <string name="pedit_java_runtime">Java Runtime</string>
     <string name="pedit_renderer">Randator</string>
-    <string name="arc_capes_title">Pelerine Cosmetica</string>
-    <string name="arc_capes_desc">Activează pelerinele de la Cosmetica (anterior Arc). Pentru mai multe informații, vizitează https://cosmetica.cc. Necesită OptiFine.</string>
     <string name="notif_channel_name">General</string>
     <string name="lazy_service_default_title">Serviciu Mojo prim-plan</string>
     <string name="mcl_setting_veroption_installed">Instalat</string>

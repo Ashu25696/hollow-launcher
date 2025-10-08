@@ -202,8 +202,6 @@
     <string name="global_delete">Supprimer</string>
     <string name="pedit_java_runtime">Exécutable Java</string>
     <string name="pedit_renderer">Moteur de rendu</string>
-    <string name="arc_capes_title">Capes Cosmetica</string>
-    <string name="arc_capes_desc">Active les capes Cosmetica. Pour plus d\'informations visitez https://cosmetica.cc. Nécessite OptiFine.</string>
     <string name="notif_channel_name">Général</string>
     <string name="lazy_service_default_title">Service de premier plan de Mojo</string>
     <string name="mcl_setting_veroption_installed">Installés</string>

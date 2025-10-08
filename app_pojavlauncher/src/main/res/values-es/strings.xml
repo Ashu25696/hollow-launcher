@@ -201,8 +201,6 @@
     <string name="global_delete">Eliminar</string>
     <string name="pedit_java_runtime">Java Runtime</string>
     <string name="pedit_renderer">Renderizador</string>
-    <string name="arc_capes_title">Capas de Comestica</string>
-    <string name="arc_capes_desc">Activa las capas de Cosmetica (anteriormente Arc). Para más información ve a esta página https://cosmetica.cc. Necesitas Optifine.</string>
     <string name="notif_channel_name">General</string>
     <string name="lazy_service_default_title">Servicio de primer plano de MojoLauncher</string>
     <string name="mcl_setting_veroption_installed">Instalada</string>

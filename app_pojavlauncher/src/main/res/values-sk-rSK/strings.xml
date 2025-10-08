@@ -196,8 +196,6 @@
     <string name="global_delete">Vymazať</string>
     <string name="pedit_java_runtime">Java Runtime</string>
     <string name="pedit_renderer">Vykresľovač</string>
-    <string name="arc_capes_title">Cosmetica Capeky</string>
-    <string name="arc_capes_desc">Aktivuje capeky (plášte) Cosmetica. Pre info navštívte https://cosmetica.cc. Pre ich funkčnosť je potrebný OptiFine.</string>
     <string name="notif_channel_name">Všeobecné nastavenia notifikácií</string>
     <string name="lazy_service_default_title">Mojo Foreground Service</string>
     <string name="use_global_default">(Použiť predvolené nastavenie)</string>

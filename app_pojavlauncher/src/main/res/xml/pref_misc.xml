@@ -17,11 +17,6 @@
             android:key="fastStartupCheck"
             android:summary="@string/preference_go_vroom_description"
             android:title="@string/preference_go_vroom_title" />
-        <SwitchPreference
-            android:defaultValue="false"
-            android:key="arc_capes"
-            android:summary="@string/arc_capes_desc"
-            android:title="@string/arc_capes_title" />
         <androidx.preference.ListPreference
             android:defaultValue="default"
             android:key="downloadSource"
