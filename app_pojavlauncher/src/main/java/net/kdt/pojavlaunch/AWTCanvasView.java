@@ -6,6 +6,7 @@ import android.text.*;
 import android.util.*;
 import android.view.*;
 
+import java.nio.ByteBuffer;
 import java.util.*;
 import net.kdt.pojavlaunch.utils.*;
 
@@ -65,16 +66,18 @@ public class AWTCanvasView extends TextureView implements TextureView.SurfaceTex
         Canvas canvas;
         Surface surface = new Surface(getSurfaceTexture());
         Bitmap rgbArrayBitmap = Bitmap.createBitmap(AWT_CANVAS_WIDTH, AWT_CANVAS_HEIGHT, Bitmap.Config.ARGB_8888);
+        ByteBuffer targetBuffer = ByteBuffer.allocateDirect(rgbArrayBitmap.getByteCount());
         Paint paint = new Paint();
+        boolean mDrawing;
         try {
             while (!mIsDestroyed && surface.isValid()) {
                 canvas = surface.lockCanvas(null);
-                canvas.drawRGB(0, 0, 0);
-                int[] rgbArray = JREUtils.renderAWTScreenFrame(/* canvas, mWidth, mHeight */);
-                boolean mDrawing = rgbArray != null;
-                if (rgbArray != null) {
+                canvas.drawRGB(0,0,0);
+                mDrawing = JREUtils.renderAWTScreenFrame(targetBuffer);
+                targetBuffer.rewind();
+                if (mDrawing) {
                     canvas.save();
-                    rgbArrayBitmap.setPixels(rgbArray, 0, AWT_CANVAS_WIDTH, 0, 0, AWT_CANVAS_WIDTH, AWT_CANVAS_HEIGHT);
+                    rgbArrayBitmap.copyPixelsFromBuffer(targetBuffer);
                     canvas.drawBitmap(rgbArrayBitmap, 0, 0, paint);
                     canvas.restore();
                 }

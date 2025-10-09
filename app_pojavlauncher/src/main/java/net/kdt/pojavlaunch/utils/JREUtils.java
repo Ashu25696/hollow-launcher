@@ -11,6 +11,7 @@ import android.util.*;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.*;
+import java.nio.ByteBuffer;
 import java.util.*;
 import net.kdt.pojavlaunch.*;
 import net.kdt.pojavlaunch.extra.ExtraConstants;
@@ -260,7 +261,7 @@ public class JREUtils {
     public static native void releaseBridgeWindow();
     public static native void initializeHooks();
     // Obtain AWT screen pixels to render on Android SurfaceView
-    public static native int[] renderAWTScreenFrame(/* Object canvas, int width, int height */);
+    public static native boolean renderAWTScreenFrame(ByteBuffer tempBuffer);
     static {
         System.loadLibrary("exithook");
         System.loadLibrary("pojavexec");
