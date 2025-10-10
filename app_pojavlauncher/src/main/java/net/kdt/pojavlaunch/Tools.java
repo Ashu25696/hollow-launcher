@@ -585,7 +585,8 @@ public final class Tools {
 
 
                 // Inheriting Minecraft 1.13+ with append custom args
-                if (inheritsVer.arguments != null && customVer.arguments != null) {
+                if (inheritsVer.arguments != null && customVer.arguments != null &&
+                    inheritsVer.arguments.game != null && customVer.arguments.game != null) {
                     List totalArgList = new ArrayList(Arrays.asList(inheritsVer.arguments.game));
 
                     int nskip = 0;

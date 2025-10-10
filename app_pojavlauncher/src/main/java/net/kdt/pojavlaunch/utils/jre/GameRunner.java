@@ -188,7 +188,7 @@ public class GameRunner {
 
         List<String> javaArgList = new ArrayList<>();
 
-        if (versionInfo.logging != null) {
+        if (versionInfo.logging != null && versionInfo.logging.client != null && versionInfo.logging.client.file != null) {
             String configFile = Tools.DIR_DATA + "/security/" + versionInfo.logging.client.file.id.replace("client", "log4j-rce-patch");
             if (!new File(configFile).exists()) {
                 configFile = Tools.DIR_GAME_NEW + "/" + versionInfo.logging.client.file.id;
@@ -330,7 +330,7 @@ public class GameRunner {
         varArgMap.put("version_type", versionInfo.type);
 
         List<String> minecraftArgs = new ArrayList<>();
-        if (versionInfo.arguments != null) {
+        if (versionInfo.arguments != null && versionInfo.arguments.game != null) {
             // Support Minecraft 1.13+
             for (Object arg : versionInfo.arguments.game) {
                 if (arg instanceof String) {
