@@ -163,5 +163,13 @@ public class GLInfoUtils {
         public boolean isAdreno() {
             return renderer.contains("Adreno") && vendor.equals("Qualcomm");
         }
+
+        /**
+         * Check if this GLInfo belongs to a ARM Mali/Immortalis graphics adapter
+         * @return
+         */
+        public boolean isArm() {
+            return (renderer.contains("Mali") || renderer.contains("Immortalis")) && vendor.equals("ARM");
+        }
     }
 }

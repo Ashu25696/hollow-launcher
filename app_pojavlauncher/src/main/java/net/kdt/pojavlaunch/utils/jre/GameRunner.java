@@ -59,6 +59,14 @@ public class GameRunner {
         return false;
     }
 
+    private static int parseIntDefault(String value, int defaultValue) {
+        try {
+            return Integer.parseInt(value);
+        }catch (NumberFormatException e) {
+            return defaultValue;
+        }
+    }
+
     /**
      * Initialize OpenGL and do checks to see if the GPU of the device is affected by the render
      * distance issue.
@@ -78,19 +86,36 @@ public class GameRunner {
     private static boolean checkRenderDistance(File gamedir) {
         if(!affectedByRenderDistanceIssue()) return false;
         if(hasSodium(gamedir)) return false;
-
-        int renderDistance;
         try {
             MCOptionUtils.load();
-            String renderDistanceString = MCOptionUtils.get("renderDistance");
-            renderDistance = Integer.parseInt(renderDistanceString);
         }catch (Exception e) {
-            Log.e("Tools", "Failed to check render distance", e);
-            renderDistance = 12; // Assume Minecraft's default render distance
+            Log.e("Tools", "Failed to load config", e);
         }
+        int renderDistance = parseIntDefault(MCOptionUtils.get("renderDistance"),12);
         // 7 is the render distance "magic number" above which MC creates too many buffers
         // for Adreno's OpenGL ES implementation
         return renderDistance > 7;
+    }
+
+    /**
+     * Decrease clound rendering distance in order to avoid the Mali cloud rendering slowdown bug
+     */
+    private static void fixDeathCloud() {
+        GLInfoUtils.GLInfo info = GLInfoUtils.getGlInfo();
+        if(!info.isArm()) return; // Not an affected GPU
+        try {
+            MCOptionUtils.load();
+        }catch (Exception e) {
+            Log.e("Tools", "Failed to load config", e);
+        }
+        int cloudRange = parseIntDefault(MCOptionUtils.get("cloudRange"), 128);
+        if(cloudRange <= 64) return; // Not affected below 117 (but let's err on the safe side)
+        try {
+            MCOptionUtils.set("cloudRange", "64");
+            MCOptionUtils.save();
+        }catch (Exception e) {
+            Log.e("Tools", "Failed to save config", e);
+        }
     }
 
     private static boolean isGl4esCompatible(JMinecraftVersionList.Version version) throws Exception{
@@ -168,6 +193,8 @@ public class GameRunner {
                 Log.e("Tools", "Failed to fix render distance setting", e);
             }
         }
+
+        if(rendererName.equals("opengles3_ltw")) fixDeathCloud();
 
         int requiredJavaVersion = 8;
         if(versionInfo.javaVersion != null) requiredJavaVersion = versionInfo.javaVersion.majorVersion;
