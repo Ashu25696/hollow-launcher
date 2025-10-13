@@ -20,7 +20,7 @@ jobs:
         uses: dawidd6/action-download-artifact@v6
         continue-on-error: true
         with:
-          repo: artdeell/LTW
+          repo: MojoLauncher/LTW
           workflow: android.yml
           workflow_conclusion: success
           name: output-aar
