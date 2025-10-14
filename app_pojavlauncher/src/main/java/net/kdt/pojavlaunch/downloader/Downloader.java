@@ -60,7 +60,8 @@ public class Downloader {
         mDownloadedFileCounter.set(0);
         mDownloadedSizeCounter.set(0);
         mDownloadService = Executors.newFixedThreadPool(3);
-        mVerifyService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), r -> {
+        int verifyThreads = Math.max(2, Runtime.getRuntime().availableProcessors() - 2);
+        mVerifyService = Executors.newFixedThreadPool(verifyThreads, r -> {
             Thread thread = new Thread(r);
             thread.setPriority(10);
             thread.setName("verify thread");
