@@ -134,7 +134,9 @@ public class JREUtils {
         envMap.put("allow_higher_compat_version", "true");
         envMap.put("allow_glsl_extension_directive_midshader", "true");
 
-        setupAngleEnv(context, envMap);
+        if(!renderer.equals("opengles2")) { // Don't enable ANGLE for GL4ES for now (it's currently broken)
+            setupAngleEnv(context, envMap);
+        }
         setupFfmpegEnv(context, envMap);
 
         envMap.put("MOJO_RENDERER", renderer);
