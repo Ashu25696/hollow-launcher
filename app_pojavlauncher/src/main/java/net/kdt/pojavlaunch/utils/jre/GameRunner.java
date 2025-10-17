@@ -395,11 +395,14 @@ public class GameRunner {
         // LWJGL3 comes first - must override any custom LWJGL3 on the classpath
         classpath.add(glfwFatJar.getAbsolutePath());
         // Custom version libraries are inbetween
-        generateLibClasspath(info, classpath);
+        boolean usesLWJGL3 = generateLibClasspath(info, classpath);
         // Client is last before LWJGL2 - all libraries must have higher precedence than it.
         classpath.add(getClientClasspath(actualname));
-        // LWJGLX (custom LWJGL2) comes last - anything in the client or libs should override it
-        classpath.add(lwjglxJar.getAbsolutePath());
+        // Don't add LWJGLX when the client doesn't use LWJGL2
+        if(!usesLWJGL3) {
+            // LWJGLX (custom LWJGL2) comes last - anything in the client or libs should override it
+            classpath.add(lwjglxJar.getAbsolutePath());
+        }
         classpath.trimToSize();
         return classpath;
     }
@@ -432,9 +435,12 @@ public class GameRunner {
         }
     }
 
-    public static void generateLibClasspath(JMinecraftVersionList.Version info, List<String> target) {
+    /** @return true when LWJGL3 is in use **/
+    public static boolean generateLibClasspath(JMinecraftVersionList.Version info, List<String> target) {
         ArrayMap<String, String> libraries = new ArrayMap<>();
+        boolean usesLWJGL3 = false;
         for (DependentLibrary libItem : info.libraries) {
+            if(libItem.name.startsWith("org.lwjgl:lwjgl:3.")) usesLWJGL3 = true;
             if(!checkRules(libItem.rules) || Tools.shouldSkipLibrary(libItem)) continue;
             File library = new File(Tools.DIR_HOME_LIBRARY, Tools.artifactToPath(libItem));
             if(!library.exists()) continue;
@@ -447,6 +453,7 @@ public class GameRunner {
             libraries.put(name, library.getAbsolutePath());
         }
         target.addAll(libraries.values());
+        return usesLWJGL3;
     }
 
     public static @NonNull String pickRuntime(Instance instance, int targetJavaVersion) {
