@@ -23,7 +23,7 @@
 
 ## Introduction
 * Hollow Launcher is a Minecraft: Java Edition launcher for Android based on MojoLauncher.  
-* This fork includes [your modifications / features] and keeps support for almost all Minecraft versions.  
+* This fork includes keeps support for almost all Minecraft versions.  
 
 ## Getting Hollow Launcher
 You can get Hollow Launcher via:
@@ -53,7 +53,7 @@ You can get Hollow Launcher via:
 
 * Hollow Launcher is licensed under **[GNU GPLv3](https://www.gnu.org/licenses/gpl-3.0.html)**.
 
-> Note: Original MojoLauncher is LGPLv3. This fork is GPLv3 to reflect your modifications.
+> Note: Original MojoLauncher is LGPLv3. This fork is GPLv3 to reflect modifications.
 
 ## Contributing
 
