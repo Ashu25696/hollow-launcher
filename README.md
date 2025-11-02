@@ -29,7 +29,7 @@
 You can get Hollow Launcher via:
 
 1. Prebuilt app from [GitHub Releases](https://github.com/Ashu25696/hollow-launcher/releases).  
-2. Google Play (if published).  
+2. Google Play (not published btw).  
 3. Build from source.
 
 ## Building
