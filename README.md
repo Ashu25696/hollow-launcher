@@ -83,6 +83,3 @@ Contributions are welcome! You can help improve the launcher, fix bugs, or contr
 
 
 
-
-Do you want me to do that?
-```
