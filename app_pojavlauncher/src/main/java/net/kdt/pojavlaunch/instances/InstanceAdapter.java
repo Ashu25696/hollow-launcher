@@ -9,7 +9,7 @@ import android.widget.BaseAdapter;
 
 import androidx.core.graphics.ColorUtils;
 
-import git.artdeell.mojo.R;
+import git.Ashmeet.hollow.R;
 import net.kdt.pojavlaunch.Tools;
 
 import java.util.List;

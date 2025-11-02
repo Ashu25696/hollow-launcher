@@ -42,7 +42,7 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 
-import git.artdeell.mojo.R;
+import git.Ashmeet.hollow.R;
 
 public class JavaGUILauncherActivity extends BaseActivity implements View.OnTouchListener {
 

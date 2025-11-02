@@ -31,7 +31,7 @@ public abstract class BaseActivity extends AppCompatActivity {
     @Override
     public void startActivity(Intent i) {
         super.startActivity(i);
-        //new Throwable("StartActivity").printStackTrace();
+       
     }
 
     @Override

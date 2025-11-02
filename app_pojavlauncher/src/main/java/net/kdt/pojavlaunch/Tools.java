@@ -77,8 +77,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
-import git.artdeell.mojo.BuildConfig;
-import git.artdeell.mojo.R;
+import git.Ashmeet.hollow.BuildConfig;
+import git.Ashmeet.hollow.R;
 
 @SuppressWarnings("IOStreamConstructor")
 public final class Tools {

@@ -5,7 +5,7 @@ import com.google.gson.annotations.SerializedName;
 import net.kdt.pojavlaunch.authenticator.impl.ElyByBackgroundLogin;
 import net.kdt.pojavlaunch.authenticator.impl.MicrosoftBackgroundLogin;
 
-import git.artdeell.mojo.R;
+import git.Ashmeet.hollow.R;
 
 public enum AuthType {
     @SerializedName("microsoft")

@@ -11,7 +11,7 @@ import androidx.fragment.app.Fragment;
 
 import com.kdt.mcgui.ProgressLayout;
 
-import git.artdeell.mojo.R;
+import git.Ashmeet.hollow.R;
 import net.kdt.pojavlaunch.Tools;
 import net.kdt.pojavlaunch.progresskeeper.ProgressKeeper;
 

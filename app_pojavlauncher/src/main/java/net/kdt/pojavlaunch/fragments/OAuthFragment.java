@@ -8,7 +8,7 @@ import android.widget.Toast;
 import net.kdt.pojavlaunch.Tools;
 import net.kdt.pojavlaunch.extra.ExtraCore;
 
-import git.artdeell.mojo.R;
+import git.Ashmeet.hollow.R;
 
 public class OAuthFragment extends WebViewCompletionFragment {
 

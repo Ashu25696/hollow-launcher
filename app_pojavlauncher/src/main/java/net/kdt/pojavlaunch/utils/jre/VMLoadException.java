@@ -4,7 +4,7 @@ import android.content.Context;
 
 import androidx.annotation.NonNull;
 
-import git.artdeell.mojo.R;
+import git.Ashmeet.hollow.R;
 
 public class VMLoadException extends Exception {
     private final int loadStep;

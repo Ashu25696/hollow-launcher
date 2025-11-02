@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import git.artdeell.mojo.R;
+import git.Ashmeet.hollow.R;
 
 public class Downloader {
     private static final double ONE_MEGABYTE = (1024d * 1024d);

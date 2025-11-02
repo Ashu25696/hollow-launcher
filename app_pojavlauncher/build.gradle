@@ -50,7 +50,7 @@ configurations {
 }
 
 android {
-    namespace 'git.artdeell.mojo'
+    namespace 'git.Ashmeet.hollow'
 
     compileSdk = 36
 
@@ -66,7 +66,7 @@ android {
             keyPassword "android"
         }
         googlePlayBuild {
-            storeFile file("mojo_upload.jks")
+            storeFile file("hollow_upload.jks")
             storePassword System.getenv("UPLOAD_KEYSTORE_PASSWORD")
             keyAlias "key0"
             keyPassword System.getenv("UPLOAD_KEYSTORE_PASSWORD")
@@ -74,7 +74,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "git.artdeell.mojo"
+        applicationId "git.Ashmeet.hollow"
         minSdkVersion 21
         targetSdkVersion 35
         versionCode getDateSeconds()
@@ -103,7 +103,7 @@ android {
             shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.customDebug
-            resValue 'string', 'application_package', 'git.artdeell.mojo.debug'
+            resValue 'string', 'application_package', 'git.Ashmeet.hollow.debug'
             resValue 'string', 'storageProviderAuthorities', 'git.artdeell.mojo.scoped.gamefolder.debug'
         }
         proguard {
@@ -334,4 +334,5 @@ dependencies {
     // implementation 'net.sourceforge.streamsupport:streamsupport-cfuture:1.7.0'
 
     implementation fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
+    implementation 'com.google.android.material:material:1.13.0'
 }

@@ -22,7 +22,7 @@
         android:layout_width="@dimen/_52sdp"
         android:layout_height="@dimen/_42sdp"
         android:background="?attr/selectableItemBackground"
-        android:src="@drawable/ic_px_sliders"
+        android:src="@drawable/setting"
         android:scaleType="fitCenter"
 
         app:layout_constraintEnd_toEndOf="parent"
@@ -46,8 +46,6 @@
         android:layout_height="wrap_content"
 
         app:layout_constraintBottom_toBottomOf="parent" />
-
-
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

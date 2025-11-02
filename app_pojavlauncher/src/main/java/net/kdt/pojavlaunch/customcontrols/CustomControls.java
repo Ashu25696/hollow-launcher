@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.util.*;
 import net.kdt.pojavlaunch.*;
 
-import git.artdeell.mojo.R;
+import git.Ashmeet.hollow.R;
 
 @Keep
 public class CustomControls {

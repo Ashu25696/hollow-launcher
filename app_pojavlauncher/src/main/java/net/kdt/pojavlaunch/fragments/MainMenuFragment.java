@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
@@ -19,7 +20,7 @@ import androidx.fragment.app.Fragment;
 import com.kdt.mcgui.mcVersionSpinner;
 
 import net.kdt.pojavlaunch.CustomControlsActivity;
-import git.artdeell.mojo.R;
+import git.Ashmeet.hollow.R;
 
 import net.kdt.pojavlaunch.Tools;
 import net.kdt.pojavlaunch.contracts.OpenDocumentWithExtension;
@@ -47,35 +48,39 @@ public class MainMenuFragment extends Fragment {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        Button mNewsButton = view.findViewById(R.id.news_button);
-        Button mDiscordButton = view.findViewById(R.id.social_media_button);
-        Button mCustomControlButton = view.findViewById(R.id.custom_control_button);
-        Button mInstallJarButton = view.findViewById(R.id.install_jar_button);
-        Button mShareLogsButton = view.findViewById(R.id.share_logs_button);
-        Button mOpenDirectoryButton = view.findViewById(R.id.open_files_button);
+        FrameLayout mNewsButton = view.findViewById(R.id.news_button);
+        FrameLayout mDiscordButton = view.findViewById(R.id.social_media_button);
+        FrameLayout mCustomControlButton = view.findViewById(R.id.custom_control_button);
+        FrameLayout mInstallJarButton = view.findViewById(R.id.install_jar_button);
+        FrameLayout mShareLogsButton = view.findViewById(R.id.share_logs_button);
+        FrameLayout mOpenDirectoryButton = view.findViewById(R.id.open_files_button);
 
         ImageButton mEditProfileButton = view.findViewById(R.id.edit_profile_button);
         Button mPlayButton = view.findViewById(R.id.play_button);
         mVersionSpinner = view.findViewById(R.id.mc_version_spinner);
 
-        mNewsButton.setOnClickListener(v -> Tools.openURL(requireActivity(), Tools.URL_HOME));
-        mDiscordButton.setOnClickListener(v -> Tools.openURL(requireActivity(), getString(R.string.social_media_invite)));
+        // Discord link
+        // Discord link as a raw string
+        String discordLink = "https://discord.gg/RBDEjJX8ZM";
+
+// Click listeners
+        mNewsButton.setOnClickListener(v -> Tools.openURL(requireActivity(), discordLink));
+        mDiscordButton.setOnClickListener(v -> Tools.openURL(requireActivity(), discordLink));
         mCustomControlButton.setOnClickListener(v -> startActivity(new Intent(requireContext(), CustomControlsActivity.class)));
         mInstallJarButton.setOnClickListener(v -> runInstallerWithConfirmation());
         mEditProfileButton.setOnClickListener(v -> mVersionSpinner.openProfileEditor(requireActivity()));
-
         mPlayButton.setOnClickListener(v -> ExtraCore.setValue(ExtraConstants.LAUNCH_GAME, true));
+        mShareLogsButton.setOnClickListener(v -> shareLog(requireContext()));
+        mOpenDirectoryButton.setOnClickListener(v -> openGameDirectory(v.getContext()));
 
-        mShareLogsButton.setOnClickListener((v) -> shareLog(requireContext()));
-
-        mOpenDirectoryButton.setOnClickListener((v)-> openGameDirectory(v.getContext()));
-
-
-        mNewsButton.setOnLongClickListener((v)->{
+        // Long click example
+        mNewsButton.setOnLongClickListener(v -> {
             Tools.swapFragment(requireActivity(), GamepadMapperFragment.class, GamepadMapperFragment.TAG, null);
             return true;
         });
     }
+
+
 
     private void openGameDirectory(Context context) {
         File gameDirectory = InstanceManager.getSelectedListedInstance().getGameDirectory();

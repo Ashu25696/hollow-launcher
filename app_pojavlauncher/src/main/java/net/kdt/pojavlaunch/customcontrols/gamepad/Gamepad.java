@@ -25,7 +25,7 @@ import androidx.core.math.MathUtils;
 
 import net.kdt.pojavlaunch.GrabListener;
 import net.kdt.pojavlaunch.LwjglGlfwKeycode;
-import git.artdeell.mojo.R;
+import git.Ashmeet.hollow.R;
 import net.kdt.pojavlaunch.utils.MCOptionUtils;
 
 import org.lwjgl.glfw.CallbackBridge;

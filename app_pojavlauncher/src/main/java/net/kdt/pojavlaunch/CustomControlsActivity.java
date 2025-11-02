@@ -22,7 +22,7 @@ import net.kdt.pojavlaunch.utils.CropperUtils;
 
 import java.io.IOException;
 
-import git.artdeell.mojo.R;
+import git.Ashmeet.hollow.R;
 
 
 public class CustomControlsActivity extends BaseActivity implements EditorExitable, CropperUtils.CropperReceiver {

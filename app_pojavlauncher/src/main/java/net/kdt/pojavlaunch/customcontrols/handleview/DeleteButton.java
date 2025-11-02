@@ -7,7 +7,7 @@ import android.widget.Button;
 
 import androidx.annotation.Nullable;
 
-import git.artdeell.mojo.R;
+import git.Ashmeet.hollow.R;
 import net.kdt.pojavlaunch.customcontrols.buttons.ControlInterface;
 
 @SuppressLint("AppCompatCustomView")
