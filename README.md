@@ -44,7 +44,7 @@ You can get Hollow Launcher via:
 ## Current roadmap
 
 * [x] Forked from MojoLauncher
-* [x] Your custom features
+* [x] custom features
 * [ ] LTW: additional improvements
 * [ ] Modpack/mod management tool
 * [ ] Other planned features
